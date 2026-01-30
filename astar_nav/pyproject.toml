@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astar-nav"
+version = "0.1.0"
+description = "A* path planning with vision-based costmaps"
+authors = [
+  { name="Barakat" }
+]
+dependencies = [
+  "numpy",
+  "opencv-python",
+  "matplotlib"
+]
+requires-python = ">=3.8"
