@@ -36,4 +36,9 @@ These are broad, bird's eye tasks to do. If existing code exists in gitLab, port
   * Working bridge publishing to /left_camera_raw and /right_camera_raw
 ### 10. Figure out what to do about waypoint
 ### 11. Docker For all Python code
+### 12. Node or logic to calculate the waypoint
 
+## Ideas
+* Define different states ("Obstacle Avoidance Mode": Slow down and make sharper turns)
+* Potentially convert to 3D rolling cost map (Use lidar instead of depth image)
+  - Maybe priority node
