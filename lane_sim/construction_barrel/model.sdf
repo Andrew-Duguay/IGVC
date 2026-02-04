@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="Construction Barrel">
+    <link name="link">
+      <inertial>
+        <pose>0 0 0.4 0 0 0</pose>
+        <mass>500</mass>
+        <inertia>
+          <ixx>51.2096</ixx>
+          <iyy>51.2096</iyy>
+          <izz>25</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://construction_barrel/meshes/construction_barrel.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://construction_barrel/meshes/construction_barrel.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <pbr>
+            <metal>
+              <!-- IMPORTANT: Ensure this path matches the texture file in your folder -->
+              <albedo_map>model://construction_barrel/materials/textures/Construction_Barrel_Diffuse.png</albedo_map>
+              <roughness>0.3</roughness> <!-- Make it shiny plastic -->
+              <metalness>0.0</metalness> <!-- Plastic is not metal -->
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
