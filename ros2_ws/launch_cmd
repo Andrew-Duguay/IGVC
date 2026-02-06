@@ -8,3 +8,36 @@ sudo apt install ros-<your-distro>-teleop-twist-keyboard
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 rviz2 -d src/skid_steer_robot/config/robot_config.rviz
 
+
+# Ros topics ran during simulation
+/clock      # sim only
+/cmd_vel    
+/joint_states # sim only
+/left/left_camera/camera_info
+/left/left_camera/image_raw     # Replace with our camera nodes (realsense-ros?)
+/left/left_camera/image_raw/compressed
+/left/left_camera/image_raw/compressedDepth
+/left/left_camera/image_raw/theora
+/odom       # Replace with IMU/wheel node for speed
+/parameter_events
+/performance_metrics
+/right/right_camera/camera_info
+/right/right_camera/image_raw   # Replace with our camera nodes (realsense-ros?)
+/right/right_camera/image_raw/compressed
+/right/right_camera/image_raw/compressedDepth
+/right/right_camera/image_raw/theora
+/robot_description
+/rosout
+/scan   # Replace with our lidar node
+/tf
+/tf_static
+
+# ros2 nodes ran during simulation
+/gazebo # sim only
+/laser_controller   # sim only, replace with hardware driver (rplidar_node?) for lidar on real robot
+/left/camera_controller  # sim only, replace with usb_cam? on real robot
+/right/camera_controller # sim only, replace with usb_cam? on real robot
+/robot_state_publisher
+/rviz                   # Only if using Rviz
+/skid_steer_drive   # sim only, replace with motor controller node
+/transform_listener_impl_6379436478e0 # helper for rviz
