@@ -1,0 +1,13 @@
+# ROS 2 Build Artifacts (Machine Specific - DO NOT SHARE)
+build/
+install/
+log/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+
+# Editor Configs (Optional, but recommended)
+.vscode/
+.idea/
+*.swp
