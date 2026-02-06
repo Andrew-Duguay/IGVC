@@ -1,0 +1,10 @@
+cd ~/ros2_ws
+colcon build --packages-select skid_steer_robot 
+source install/setup.bash
+ros2 launch skid_steer_robot original_gazebo.launch.py
+
+
+sudo apt install ros-<your-distro>-teleop-twist-keyboard
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+rviz2 -d src/skid_steer_robot/config/robot_config.rviz
+
