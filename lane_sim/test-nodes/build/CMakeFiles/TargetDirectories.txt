@@ -1,3 +1,0 @@
-/home/andrew/gazebo-sim/lane_sim/test-nodes/build/CMakeFiles/lidar_node.dir
-/home/andrew/gazebo-sim/lane_sim/test-nodes/build/CMakeFiles/edit_cache.dir
-/home/andrew/gazebo-sim/lane_sim/test-nodes/build/CMakeFiles/rebuild_cache.dir

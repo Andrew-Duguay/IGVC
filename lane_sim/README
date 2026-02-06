@@ -1,6 +1,0 @@
-
-To listen to IMU:
-    gz topic -e -t /imu
-
-The following command launches the simulation:
-    gz launch sim_launch.gzlaunch 
