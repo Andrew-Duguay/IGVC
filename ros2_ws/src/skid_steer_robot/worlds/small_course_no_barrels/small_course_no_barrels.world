@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="small_course_no_barrels">
+    
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- Sun -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Static Floor -->
+    <include>
+      <uri>model://floor</uri> 
+      <pose>0 0 0 0 0 0</pose>   
+    </include>
+    
+    <gui fullscreen='0'>
+    <!-- Set where gui camera starts at-->
+      <camera name='user_camera'>
+        <pose>-4 -16 4 0 0.3 1.2</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+  </world>
+</sdf>
