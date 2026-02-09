@@ -1,5 +1,5 @@
 # IGVC
-Guidelines to launching simulation found in ros2_ws/launch_guide
+Guidelines to launching simulation found in ros2_ws/launch_guide.txt
 
 # Goals
 These are broad, bird's eye tasks to do. If existing code exists in gitLab, port it over.
