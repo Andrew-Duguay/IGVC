@@ -8,7 +8,8 @@ exit 1
 cd ~/put-your-path-here/ros2_ws
 
 # 2. Generates build, log, and install directories. This is why we're in ros2_ws
-colcon build --packages-select skid_steer_robot 
+colcon build --packages-select skid_steer_robot yolo_trt # or simply
+colcon build
 
 # 3. Source the newly built pkg
 source install/setup.bash
