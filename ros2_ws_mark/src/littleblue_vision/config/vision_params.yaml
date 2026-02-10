@@ -1,0 +1,53 @@
+lane_detector_node:
+  ros__parameters:
+    use_sim_time: true
+    # HSV thresholds for white line detection
+    hsv_low_h: 0
+    hsv_high_h: 180
+    hsv_low_s: 0
+    hsv_high_s: 50
+    hsv_low_v: 165
+    hsv_high_v: 255
+    # Morphology kernel size
+    morph_kernel_size: 3
+    # Only process bottom half of image (rows from this value to bottom)
+    roi_top_row: 245
+    # Pixel subsampling stride
+    subsample_stride: 4
+    # Camera intrinsics (RGB)
+    rgb_fx: 462.17
+    rgb_fy: 462.17
+    rgb_cx: 320.0
+    rgb_cy: 240.0
+    # Camera mounting
+    camera_height: 0.27
+    camera_forward_offset: 0.38
+    # Ground projection range filter (meters)
+    min_range: 0.4
+    max_range: 6.0
+    # Frame skip (process every Nth frame)
+    frame_skip: 2
+
+obstacle_projector_node:
+  ros__parameters:
+    use_sim_time: true
+    # Camera intrinsics (RGB)
+    rgb_fx: 462.17
+    rgb_fy: 462.17
+    rgb_cx: 320.0
+    rgb_cy: 240.0
+    # Camera intrinsics (Depth)
+    depth_fx: 337.22
+    depth_fy: 337.22
+    depth_cx: 320.0
+    depth_cy: 240.0
+    # Camera mounting
+    camera_height: 0.27
+    camera_forward_offset: 0.38
+    # Depth lookup patch size (NxN)
+    depth_patch_size: 5
+    # Range filter (meters)
+    min_range: 0.3
+    max_range: 8.0
+    # Time synchronizer slop (seconds)
+    sync_slop: 0.1
