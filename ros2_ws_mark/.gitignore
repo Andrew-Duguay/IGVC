@@ -3,3 +3,16 @@ install/
 log/
 *.pyc
 __pycache__/
+
+# --- AI / Machine Learning Artifacts ---
+
+# hardware specific
+*.engine
+*.plan
+
+# Can be regenerated
+*.onnx
+
+# PyTorch Weights (Standard models can be downloaded)
+*.pt
+*.pth
