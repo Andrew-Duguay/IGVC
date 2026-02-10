@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="cone">
+    <static>true</static>
+    <link name="link">
+      <!-- Base cylinder (wider bottom) -->
+      <collision name="collision_base">
+        <geometry>
+          <cylinder>
+            <radius>0.15</radius>
+            <length>0.22</length>
+          </cylinder>
+        </geometry>
+        <pose>0 0 0.11 0 0 0</pose>
+      </collision>
+      <visual name="visual_base">
+        <geometry>
+          <cylinder>
+            <radius>0.15</radius>
+            <length>0.22</length>
+          </cylinder>
+        </geometry>
+        <pose>0 0 0.11 0 0 0</pose>
+        <material>
+          <ambient>1.0 0.5 0.0 1</ambient>
+          <diffuse>1.0 0.5 0.0 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+      <!-- Top cylinder (narrower top) -->
+      <collision name="collision_top">
+        <geometry>
+          <cylinder>
+            <radius>0.07</radius>
+            <length>0.23</length>
+          </cylinder>
+        </geometry>
+        <pose>0 0 0.335 0 0 0</pose>
+      </collision>
+      <visual name="visual_top">
+        <geometry>
+          <cylinder>
+            <radius>0.07</radius>
+            <length>0.23</length>
+          </cylinder>
+        </geometry>
+        <pose>0 0 0.335 0 0 0</pose>
+        <material>
+          <ambient>1.0 0.5 0.0 1</ambient>
+          <diffuse>1.0 0.5 0.0 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
