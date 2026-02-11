@@ -2,7 +2,7 @@
 This repo is a simulation framework to aid in prototyping/testing of little blue. The framework has the following core structure:
 
 ros2_ws
-├── launch_guide.sh       # Commands to interact with simulation
+├── launch_guide.sh
 ├── build                 # Colcon generated
 ├── install               # Colcon generated
 ├── log                   # Colcon generated
