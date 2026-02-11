@@ -39,9 +39,8 @@ class LaneDetectorNode(Node):
         self.frame_count = 0
 
         self.image_sub = self.create_subscription(
-            Image, '/image_raw', self.image_callback, 10)
+            Image, '/filtered_lanes', self.image_callback, 10)
         self.pc_pub = self.create_publisher(PointCloud2, '/lane_points', 10)
-        self.mask_pub = self.create_publisher(Image, '/lane_mask', 10)
 
         self.get_logger().info('Lane detector node started')
 
@@ -77,26 +76,11 @@ class LaneDetectorNode(Node):
         params = self._get_params()
 
         # Convert to OpenCV BGR then HSV
-        bgr = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-
-        # White line detection via HSV threshold
-        mask = cv2.inRange(hsv, params['hsv_low'], params['hsv_high'])
-
-        # Morphological open then close to clean noise
-        k = params['morph_k']
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-        # Publish debug mask
-        mask_msg = self.bridge.cv2_to_imgmsg(mask, encoding='mono8')
-        mask_msg.header = msg.header
-        self.mask_pub.publish(mask_msg)
+        filtered_lanes = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
         # Extract white pixel coordinates from bottom half only (ROI)
         roi_top = params['roi_top']
-        roi_mask = mask[roi_top:, :]
+        roi_mask = filtered_lanes[roi_top:, :]
 
         # Get pixel coordinates of white pixels
         vs, us = np.where(roi_mask > 0)
