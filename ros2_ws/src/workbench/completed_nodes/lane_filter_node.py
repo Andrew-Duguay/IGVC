@@ -15,7 +15,7 @@ class LaneFilterNode(Node):
         super().__init__('lane_filter_node')
 
         self.image_sub = self.create_subscription(
-            Image, '/right_camera/image_raw', self.image_callback, 10)
+            Image, '/image_raw', self.image_callback, 10)
 
         self.filter_pub = self.create_publisher(Image, '/filtered_lanes', 10)  
 

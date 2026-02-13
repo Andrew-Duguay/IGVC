@@ -49,7 +49,7 @@ class StereoDepthNode(Node):
         )
         self.ts.registerCallback(self.sync_callback)
 
-        self.pub_depth = self.create_publisher(Image, '/depth_map', 10)
+        self.pub_depth = self.create_publisher(Image, '/depth/image_raw', 10)
         self.bridge = CvBridge()
 
     def sync_callback(self, msg_left, msg_right):
