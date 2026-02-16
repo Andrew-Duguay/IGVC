@@ -11,8 +11,8 @@ def generate_launch_description():
     # Define the package
     pkg = get_package_share_directory('skid_steer_robot')
     # Point to world file and custom models for world. UPDATE IF CHANGING WORLD
-    world_file = os.path.join(pkg, 'worlds', 'small_course_no_barrels', 'small_course_no_barrels.world')
-    model_path = os.path.join(pkg, 'worlds', 'small_course_no_barrels')
+    world_file = os.path.join(pkg, 'worlds', 'mohamed_playing', 'mohamed_playing.world')
+    model_path = os.path.join(pkg, 'worlds', 'mohamed_playing')
     # Update GAZEBO_MODEL_PATH to see the new models
     if 'GAZEBO_MODEL_PATH' in os.environ:
         model_path += os.pathsep + os.environ['GAZEBO_MODEL_PATH']
