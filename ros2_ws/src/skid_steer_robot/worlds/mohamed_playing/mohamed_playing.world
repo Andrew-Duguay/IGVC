@@ -23,82 +23,11 @@
     </include>
     
     <gui fullscreen='0'>
-    <!-- Set where gui camera starts at-->
       <camera name='user_camera'>
         <pose>-4 -16 4 0 0.3 1.2</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>
-    <!-- ===================== FINISH LINE TRIGGER ===================== -->
-<model name="finish_line_trigger">
-  <static>true</static>
-
-  <!-- X/Y TO WHERE THE FINISH IS -->
-  <!-- pose: x y z roll pitch yaw -->
-  <pose>4 0.1 0.5 0 0 1.57</pose>
-
-  <link name="finish_link">
-  <self_collide>false</self_collide>
-  <kinematic>true</kinematic>
-
-    <!-- Collision (tripwire wall) -->
-    <collision name="finish_collision">
-      <geometry>
-        <box>
-          <size>0.1 6.0 7.0</size>
-        </box>
-      </geometry>
-
-      <surface>
-        <contact>
-          <collide_without_contact>true</collide_without_contact>
-        </contact>
-        <laser_retro>0</laser_retro>
-        <category_bitmask>0x02</category_bitmask>
-        <collide_bitmask>0x02</collide_bitmask>
-        
-      </surface>
-      <max_contacts>0</max_contacts>
-
-
-    </collision>
-
-    <!-- Invisible visual -->
-    <visual name="finish_visual">
-      <geometry>
-        <box>
-          <size>0.05 4.0 1.0</size>
-        </box>
-      </geometry>
-      <material>
-        <ambient>0 0 0 0</ambient>
-        <diffuse>0 0 0 0</diffuse>
-      </material>
-    </visual>
-
-    <!-- Contact sensor -->
-    <sensor name="finish_contact_sensor" type="contact">
-      <always_on>true</always_on>
-      <update_rate>200</update_rate>
-
-      <contact>
-        <collision>finish_collision</collision>
-      </contact>
-
-      <plugin name="finish_bumper_plugin" filename="libgazebo_ros_bumper.so">
-        <ros>
-          <namespace>/course</namespace>
-        </ros>
-        <bumperTopicName>finish_contact</bumperTopicName>
-        <frameName>finish_link</frameName>
-      </plugin>
-
-    </sensor>
-    <gravity>false</gravity>
-
-  </link>
-</model>
-<!-- =============================================================== -->
 
   </world>
 </sdf>

@@ -9,7 +9,7 @@ class FinishMonitor(Node):
     def __init__(self):
         super().__init__('finish_monitor')
 
-        # Subscribe to odometry
+        # odometry
         self.odom_sub = self.create_subscription(
             Odometry,
             '/odom',
@@ -17,7 +17,7 @@ class FinishMonitor(Node):
             10
         )
 
-        # Subscribe to movement commands to start timer
+        # needs movement to start timer
         self.cmd_sub = self.create_subscription(
             Twist,
             '/cmd_vel',
@@ -29,7 +29,7 @@ class FinishMonitor(Node):
         self.finished = False
         self.start_time = None
 
-        # Define finish line (adjust as needed)
+        # Define finish line
         self.finish_x = 4.0
 
         self.get_logger().info("Waiting for movement to start timer...")
