@@ -28,3 +28,10 @@ sudo apt install ros-<your-distro>-teleop-twist-keyboard
 # 6.b. Run in separate terminal for manual control
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
+master launch --realtime 4 --headless
+realtime = 4
+
+each world
+x = 4
+
+x=15

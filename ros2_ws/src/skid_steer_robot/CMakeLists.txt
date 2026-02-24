@@ -19,7 +19,12 @@ install(
     #models   # optional — create the folder only if you have meshes/textures
   DESTINATION
     share/${PROJECT_NAME}
-  
+)
+
+# Install the Python executable
+install(PROGRAMS
+  finish_line/finish_line.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 # Testing (unchanged)

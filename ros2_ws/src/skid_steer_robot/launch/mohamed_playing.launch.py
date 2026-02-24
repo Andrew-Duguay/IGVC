@@ -2,48 +2,32 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 import xacro
 
 def generate_launch_description():
-    # Define the package
     pkg = get_package_share_directory('skid_steer_robot')
-    # Point to world file and custom models for world. UPDATE IF CHANGING WORLD
+
+    # GET PATHS TO WORLD
     world_file = os.path.join(pkg, 'worlds', 'mohamed_playing', 'mohamed_playing.world')
     model_path = os.path.join(pkg, 'worlds', 'mohamed_playing')
-    # Update GAZEBO_MODEL_PATH to see the new models
+
+    # Update GAZEBO_MODEL_PATH TO SEE CUSTOM MODELS
     if 'GAZEBO_MODEL_PATH' in os.environ:
         model_path += os.pathsep + os.environ['GAZEBO_MODEL_PATH']
     set_gazebo_model_path = SetEnvironmentVariable(
         name='GAZEBO_MODEL_PATH',
         value=model_path
     )
-    # Define files
+
+    # DEFINE THE ROBOT NODE
     xacro_file = os.path.join(pkg, 'urdf', 'robot.urdf.xacro')
     doc = xacro.process_file(xacro_file, mappings={"scale": os.getenv("SCALE", "1.0")})
     robot_description = {"robot_description": doc.toxml()}
-
-    return LaunchDescription([
-        # Set new path first
-        set_gazebo_model_path,
-        # Start state publisher
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            output='screen',
-            parameters=[robot_description, {'use_sim_time': True}]
-        ),
-        # Start Gazebo
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')
-            ),
-            launch_arguments={'world': world_file}.items()
-        ),
-        # spawn Robot
-        Node(
+    robot_node = Node(
             package='gazebo_ros',
             executable='spawn_entity.py',
             arguments=[
@@ -56,5 +40,60 @@ def generate_launch_description():
                 '-Y', '1.06'
             ],
             output='screen'
-        ),
+        )
+
+    # DEFINE THE SIMULATION NODE
+    robot_state_publisher_node = Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            output='screen',
+            parameters=[
+                robot_description, 
+                {'use_sim_time': True}
+            ]
+        )
+    
+    # DEFINE THE FINISH LINE TRACKER NODE (OPENS IN NEW TERMINAL)
+    finish_line_node = Node(
+        package='skid_steer_robot',
+        executable='finish_line.py',
+        name='finish_line_tracker',
+        output='screen',
+        # This prefix command opens standard Ubuntu terminal. 
+        # If it immediately closes, try: prefix='xterm -hold -e'
+        prefix=['gnome-terminal', '--'], 
+        parameters=[
+            {'use_sim_time': True}
+        ]
+    )
+
+    # DEFINE THE GAZEBO LAUNCH
+    gui_arg = LaunchConfiguration('gui')    # grab value from CLI
+    gui_cmd = DeclareLaunchArgument(        # Declare the arguments so the system knows they exist
+            'gui',
+            default_value='true',
+            description='Run the simulation with GUI (true) or without GUI (false)'
+        )
+    launch_gazebo_action = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')
+            ),
+            launch_arguments={
+                'world': world_file,
+                'gui': gui_arg
+            }.items()
+        )
+
+    return LaunchDescription([
+        gui_cmd,
+        # Set new path first
+        set_gazebo_model_path,
+        # Start state publisher
+        robot_state_publisher_node,
+        # Start Gazebo
+        launch_gazebo_action,
+        # spawn Robot
+        robot_node,
+        #launch Finish Line
+        finish_line_node
     ])
