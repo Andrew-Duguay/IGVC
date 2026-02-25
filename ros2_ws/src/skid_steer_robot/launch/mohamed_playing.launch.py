@@ -54,16 +54,22 @@ def generate_launch_description():
         )
     
     # DEFINE THE FINISH LINE TRACKER NODE (OPENS IN NEW TERMINAL)
+    # PUT YOUR FINISH LINE HERE
+    x1_arg = LaunchConfiguration('x1', default='-10.0')
+    y1_arg = LaunchConfiguration('y1', default='-10.0')
+    x2_arg = LaunchConfiguration('x2', default='10.0')
+    y2_arg = LaunchConfiguration('y2', default='-10.0')
     finish_line_node = Node(
         package='skid_steer_robot',
         executable='finish_line.py',
-        name='finish_line_tracker',
+        name='finish_line_node',
         output='screen',
-        # This prefix command opens standard Ubuntu terminal. 
-        # If it immediately closes, try: prefix='xterm -hold -e'
-        prefix=['gnome-terminal', '--'], 
         parameters=[
-            {'use_sim_time': True}
+            {'use_sim_time': True},
+            {'x1': x1_arg},
+            {'y1': y1_arg},
+            {'x2': x2_arg},
+            {'y2': y2_arg}
         ]
     )
 
