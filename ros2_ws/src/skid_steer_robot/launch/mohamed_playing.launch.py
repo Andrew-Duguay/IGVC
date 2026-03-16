@@ -55,10 +55,10 @@ def generate_launch_description():
     
     # DEFINE THE FINISH LINE TRACKER NODE (OPENS IN NEW TERMINAL)
     # PUT YOUR FINISH LINE HERE
-    x1_arg = LaunchConfiguration('x1', default='-10.0')
-    y1_arg = LaunchConfiguration('y1', default='-10.0')
-    x2_arg = LaunchConfiguration('x2', default='10.0')
-    y2_arg = LaunchConfiguration('y2', default='-10.0')
+    x1_arg = LaunchConfiguration('x1', default='-0.2')
+    y1_arg = LaunchConfiguration('y1', default='-4.3')
+    x2_arg = LaunchConfiguration('x2', default='5.0')
+    y2_arg = LaunchConfiguration('y2', default='-6.8')
     finish_line_node = Node(
         package='skid_steer_robot',
         executable='finish_line.py',

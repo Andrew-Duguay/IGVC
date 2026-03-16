@@ -10,7 +10,7 @@ import sys
 simulations = [
     {
         'id': 1, 
-        'cmd': ['ros2', 'launch', 'skid_steer_robot', 'mohamed_playing.launch.py', 'gui:=false']
+        'cmd': ['ros2', 'launch', 'skid_steer_robot', 'mohamed_playing.launch.py']
     },
     # {
     #     'id': 2, 
@@ -19,7 +19,7 @@ simulations = [
 
 ]
 
-TIMEOUT_SECONDS = 2
+TIMEOUT_SECONDS = 40
 SUCCESS_PHRASE = "[SUCCESS] Course completed."
 
 print("="*40)
@@ -44,14 +44,14 @@ for sim in simulations:
     
     try:
         # Read the terminal output line by line in real-time
-        print("start\n")
-        for line in process.stdout:
-            # 1. Check for success
-            if SUCCESS_PHRASE in line:
-                status = "[SUCCESS]"
-                elapsed = int(time.time() - start_time)
-                break
-            
+        while(True):
+            for line in process.stdout:
+                # 1. Check for success
+                if SUCCESS_PHRASE in line:
+                    status = "[SUCCESS]"
+                    elapsed = int(time.time() - start_time)
+                    break
+                
             # 2. Check for timeout
             if (time.time() - start_time) > TIMEOUT_SECONDS:
                 break

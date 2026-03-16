@@ -48,8 +48,9 @@ class FinishLine(Node):
         x2 = self.get_parameter('x2').get_parameter_value().double_value
         y2 = self.get_parameter('y2').get_parameter_value().double_value
 
-        finish_line = Line(Point(x1, y1), Point(x2, y2))
+        self.finish_line = Line(Point(x1, y1), Point(x2, y2))
         self.current_position = Point(-1000, -1000)
+        self.last_position = Point(-1000, -1000)
 
         # odometry
         self.odom_sub = self.create_subscription(
@@ -86,8 +87,8 @@ class FinishLine(Node):
         if self.timer_started and not self.finished:
             x = msg.pose.pose.position.x
             y = msg.pose.pose.position.y
-            update_current_position(x, y)
-            if finish_line_crossed():
+            self.update_current_position(x, y)
+            if self.finish_line_crossed():
                 end_time = self.get_clock().now()
                 duration = (end_time - self.start_time).nanoseconds / 1e9
                 self.get_logger().info(f"[SUCCESS] Course completed.")
@@ -105,7 +106,7 @@ class FinishLine(Node):
             self.current_position.set_point(x,y)
             self.last_position.set_point(x,y)
         else:
-            self.last_position = self.current_position
+            self.last_position.set_point(self.current_position.x, self.current_position.y)
             self.current_position.set_point(x, y)
 
 def main(args=None):

@@ -12,7 +12,7 @@ ros2_ws
 ├── log                   # Colcon generated
 └── src                   
     ├── skid_steer_robot  # Simulation stuff lives here, be careful.
-    │   ├── launch              # Launch files for starting the simulation
+    │   ├── launch              # Launch files for starting the sim
     │   │   ├── world1.launch.py
     │   │   ├── world2.launch.py
     │   │   └── world3.launch.py
