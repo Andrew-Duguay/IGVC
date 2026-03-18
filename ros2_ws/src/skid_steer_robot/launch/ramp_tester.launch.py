@@ -9,11 +9,26 @@ from launch_ros.actions import Node
 import xacro
 
 def generate_launch_description():
+    world_name = "ramp_tester"
+    robot_position = {
+        'x': '0.0', 
+        'y': '20.0',
+        'z': '0.1',
+        'R': '0.0',
+        'P': '0.0',
+        'Y': '0.0'
+    }
+    finish_line_points = {
+        'x1': '0.0',
+        'y1': '0.0',
+        'x2': '0.0',
+        'y2': '0.0'
+    }
     pkg = get_package_share_directory('skid_steer_robot')
 
     # GET PATHS TO WORLD
-    world_file = os.path.join(pkg, 'worlds', 'ramp_tester', 'ramp_tester.world')
-    model_path = os.path.join(pkg, 'worlds', 'ramp_tester', 'models')
+    world_file = os.path.join(pkg, 'worlds', world_name, f"{world_name}.world")
+    model_path = os.path.join(pkg, 'worlds', world_name)
 
     # Update GAZEBO_MODEL_PATH TO SEE CUSTOM MODELS
     if 'GAZEBO_MODEL_PATH' in os.environ:
@@ -32,12 +47,12 @@ def generate_launch_description():
             executable='spawn_entity.py',
             arguments=[
                 '-topic', 'robot_description', '-entity', 'skid_steer_robot',
-                '-x', '0.02',
-                '-y', '-9',
-                '-z', '0.1',
-                '-R', '0.0',  # Roll
-                '-P', '0.0',  # Pitch
-                '-Y', '1.06'
+                '-x', robot_position['x'],
+                '-y', robot_position['y'],
+                '-z', robot_position['z'],
+                '-R', robot_position['R'],
+                '-P', robot_position['P'],
+                '-Y', robot_position['Y']
             ],
             output='screen'
         )
@@ -55,10 +70,10 @@ def generate_launch_description():
     
     # DEFINE THE FINISH LINE TRACKER NODE (OPENS IN NEW TERMINAL)
     # PUT YOUR FINISH LINE HERE
-    x1_arg = LaunchConfiguration('x1', default='-10.0')
-    y1_arg = LaunchConfiguration('y1', default='-10.0')
-    x2_arg = LaunchConfiguration('x2', default='10.0')
-    y2_arg = LaunchConfiguration('y2', default='-10.0')
+    x1_arg = LaunchConfiguration('x1', default=finish_line_points['x1'])
+    y1_arg = LaunchConfiguration('y1', default=finish_line_points['y1'])
+    x2_arg = LaunchConfiguration('x2', default=finish_line_points['x2'])
+    y2_arg = LaunchConfiguration('y2', default=finish_line_points['y2'])
     finish_line_node = Node(
         package='skid_steer_robot',
         executable='finish_line.py',

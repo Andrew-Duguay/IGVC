@@ -7,47 +7,21 @@ import signal
 import sys
 import select
 import re
-import shutil
+import tempfile
+from ament_index_python.packages import get_package_share_directory
 
-# -----------------------------
-# Argument Parser
-# -----------------------------
+# Parse the speed multiplier
 parser = argparse.ArgumentParser(description="Run batch simulations")
 parser.add_argument('--speed', type=float, default=1.0,
                     help="Simulation speed multiplier (default=1.0)")
 args = parser.parse_args()
-
-# -----------------------------
-# Paths
-# -----------------------------
-WORLD_PATH = os.path.expanduser(
-    "~/ros_ws/IGVC/ros2_ws/install/skid_steer_robot/share/skid_steer_robot/worlds/mohamed_playing/mohamed_playing.world"
-)
-BACKUP_PATH = WORLD_PATH + ".backup"
-
-# -----------------------------
-# Backup Original World
-# -----------------------------
-shutil.copy(WORLD_PATH, BACKUP_PATH)
-
-# -----------------------------
-# Modify Update Rate
-# -----------------------------
-with open(WORLD_PATH, "r") as f:
-    world_content = f.read()
-
 new_rate = int(1000 * args.speed)
 
-world_content = re.sub(
-    r"<real_time_update_rate>\d+</real_time_update_rate>",
-    f"<real_time_update_rate>{new_rate}</real_time_update_rate>",
-    world_content
-)
-
-with open(WORLD_PATH, "w") as f:
-    f.write(world_content)
-
-print(f"\nUsing update rate: {new_rate}")
+# -----------------------------
+# Dynamic Paths & Safe Temp File
+# -----------------------------
+# 1. Get path dynamically (No hardcoded paths!)
+pkg_share = get_package_share_directory('skid_steer_robot')
 
 # -----------------------------
 # Simulation Config
@@ -55,84 +29,110 @@ print(f"\nUsing update rate: {new_rate}")
 simulations = [
     {
         'id': 1,
-        'cmd': [
-            'ros2',
-            'launch',
-            'skid_steer_robot',
-            'mohamed_playing.launch.py',
-            'gui:=True'
-        ]
+        'name': 'mohamed_playing',
+        'TIMEOUT': 20,        
+    },
+    {
+        'id': 2,
+        'name': 'mohamed_playing',
+        'TIMEOUT': 5,        
+    },
+    {
+        'id': 3,
+        'name': 'mohamed_playing',
+        'TIMEOUT': 10,        
+    },
+    {
+        'id': 4,
+        'name': 'mohamed_playing',
+        'TIMEOUT': 30,        
     },
 ]
 
-TIMEOUT_SECONDS = 60
 SUCCESS_PHRASE = "[SUCCESS] Course completed."
 
 print("="*40)
-print("🤖 BATCH SIMULATION RUNNER STARTED")
+print("🚀🚀🚀 BATCH SIMULATIONS STARTED 🚀🚀🚀")
 print("="*40)
 
 for sim in simulations:
-    print(f"Starting simulation {sim['id']}...", end='', flush=True)
+    status = ""
+    # 1. Get world file path
+    world_path = os.path.join(pkg_share, 'worlds', sim['name'], f"{sim['name']}.world")
 
+    # 2. Read the original src world file in buffer
+    with open(world_path, "r") as f:
+        world_content = f.read()
+
+    # 3. Replace time update rate in buffer
+    world_content = re.sub(
+        r"<real_time_update_rate>\d+</real_time_update_rate>",
+        f"<real_time_update_rate>{new_rate}</real_time_update_rate>",
+        world_content
+    )
+
+    # 4. Create a temporary world file with updated buffer value
+    temp_world = tempfile.NamedTemporaryFile(delete=False, suffix='.world', mode='w')
+    temp_world.write(world_content)
+    temp_world.close()
+
+    # 5. Launch sim using temp world file, not original
+    sim_cmd = [
+            'ros2', 'launch', 'skid_steer_robot', f"{sim['name']}.launch.py",
+            'gui:=false',
+            f"world:={temp_world.name}"  # Pass the temp file to the launch file
+        ]
+
+    print(f"🔄 Simulation {sim['id']} Running...", end='', flush=True)
     start_time = time.time()
-    status = "[FAILURE] TIMEOUT"
-    elapsed = TIMEOUT_SECONDS
 
     process = subprocess.Popen(
-        sim['cmd'],
+        sim_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        preexec_fn=os.setsid
+        preexec_fn=os.setsid,
+        env=os.environ.copy() 
     )
 
     try:
-        # Read the terminal output line by line in real-time
-        while(True):
-            for line in process.stdout:
-                # 1. Check for success
-                if SUCCESS_PHRASE in line:
-                    status = "[SUCCESS]"
-                    elapsed = int(time.time() - start_time)
-                    break
-                
-            # 2. Check for timeout
-            if (time.time() - start_time) > TIMEOUT_SECONDS:
+        # 6. Non-Blocking Read Logic
+        while True:
+            # Check timeout
+            if (time.time() - start_time) > sim['TIMEOUT']:
+                print(f"\r❌ Simulation {sim['id']} Failed to complete in {sim['TIMEOUT']}s\033[K")
                 break
 
+            # Wait 0.5s for new terminal output
             ready, _, _ = select.select([process.stdout], [], [], 0.5)
 
             if ready:
                 line = process.stdout.readline()
+                
+                # If readline returns empty, Gazebo crashed or closed
                 if not line:
+                    print(f"\r💥 Simulation {sim['id']} crashed after {time.time() - start_time}s\033[K")
                     break
 
                 if SUCCESS_PHRASE in line:
-                    status = "[SUCCESS]"
-                    elapsed = int(time.time() - start_time)
+                    print(f"\r✅ Simulation {sim['id']} completed in {time.time() - start_time}s\033[K")
                     break
-
-            if process.poll() is not None:
-                break
 
     except KeyboardInterrupt:
         print("\nPipeline manually aborted by user.")
         os.killpg(os.getpgid(process.pid), signal.SIGINT)
+        os.remove(temp_world.name) # Clean up temp file
         sys.exit(1)
-
+    
     finally:
         os.killpg(os.getpgid(process.pid), signal.SIGINT)
         process.wait()
-
-        print(f"{status} IN {elapsed}s")
         time.sleep(3)
+    # 7. Clean up the temp file
+    os.remove(temp_world.name)
 
-# -----------------------------
-# Restore Original World
-# -----------------------------
-shutil.move(BACKUP_PATH, WORLD_PATH)
+        
 
 print("="*40)
-print("✅ ALL SIMULATIONS COMPLETE")
+print("🏆🏆🏆 ALL SIMULATIONS COMPLETE 🏆🏆🏆")
 print("="*40)
