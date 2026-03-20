@@ -29,22 +29,32 @@ pkg_share = get_package_share_directory('skid_steer_robot')
 simulations = [
     {
         'id': 1,
-        'name': 'mohamed_playing',
-        'TIMEOUT': 20,        
+        'name': 'ramp',
+        'TIMEOUT': 30,        
     },
     {
         'id': 2,
-        'name': 'mohamed_playing',
-        'TIMEOUT': 5,        
+        'name': 'empty_straight_lane',
+        'TIMEOUT': 30,        
     },
     {
         'id': 3,
-        'name': 'mohamed_playing',
-        'TIMEOUT': 10,        
+        'name': 'straight_lane_obstacles1',
+        'TIMEOUT': 30,        
     },
     {
         'id': 4,
-        'name': 'mohamed_playing',
+        'name': 'straight_lane_obstacles2',
+        'TIMEOUT': 30,        
+    },
+    {
+        'id': 5,
+        'name': 'straight_lane_obstacles3',
+        'TIMEOUT': 30,        
+    },
+    {
+        'id': 6,
+        'name': 'straight_lane_obstacles4',
         'TIMEOUT': 30,        
     },
 ]

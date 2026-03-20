@@ -28,7 +28,7 @@ def generate_launch_description():
 
     # GET PATHS TO WORLD
     world_file = os.path.join(pkg, 'worlds', world_name, f"{world_name}.world")
-    model_path = os.path.join(pkg, 'worlds', world_name)
+    model_path = os.path.join(pkg, 'worlds', world_name, 'custom_models')
 
     # Update GAZEBO_MODEL_PATH TO SEE CUSTOM MODELS
     if 'GAZEBO_MODEL_PATH' in os.environ:
