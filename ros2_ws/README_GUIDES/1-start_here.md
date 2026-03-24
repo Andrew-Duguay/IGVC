@@ -1,8 +1,16 @@
-# START HERE
-This repo is a simulation framework to aid in prototyping/testing of autonomous vehicles. It contains a robust collection of simulations and an easy workflow. 
-To effectively use the simulation it is recommended you follow along with the guide. It's very easy to understand and won't take you very long once dependencies are all set up. 
 
-The framework has the following core structure:
+# 🚀 Simulation Framework: Quick Start Guide
+
+Welcome to the autonomous vehicle simulation framework. This repository provides a robust collection of simulation environments and a streamlined workflow to help you prototype and test your autonomous systems.
+
+> **💡 LISTEN :** To get the most out of this framework without running into setup headaches, we highly recommend reading this brief guide. Once your dependencies are configured, the workflow is fast, safe, and intuitive.
+
+
+
+## 📂 Core Repository Structure
+
+The workspace is organized into a standard ROS 2 architecture, with a strict separation between the core simulation engine and your custom experimental code.
+
 
 ```yaml
 ros2_ws
@@ -26,14 +34,17 @@ ros2_ws
         ├── my_other_ros_pkg
         └── standalone_node.py
 ```
+## The Two Golden Rules
+To keep your development process smooth and avoid "dependency hell", please adhere to these two structural rules:
 
-* Anything you will launch should be from the ros2_ws. 
-    * It simplifies everything. 
-    * If you change up the flow then you might throw yourself into a dependency hell and be stuck crawling through nested launch and config files. 
-    * Don't reinvent the wheel, just use the tool as is.
+1. Always execute commands from the workspace root (ros2_ws)
+    * Why: It guarantees that all relative paths, environment variables, and sourced setup files resolve correctly.
 
-* All your code will be in the workbench directory. 
+    * The Risk: If you change the execution flow or try launching scripts from deep within subdirectories, you will likely break underlying dependencies and find yourself crawling through nested config files trying to fix paths.
 
-    * It's isolated, safe, clean and organized. 
-    * Use whatever structure you want in there, that's your room to do what you want with. 
-    * Right now it holds only the example program.
+    * The Takeaway: Don't reinvent the wheel. Use the provided tools and launch files exactly as intended from the root directory.
+
+2. Keep all your code in the ```/workbench``` directory
+    * Why: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
+
+    * Your Freedom: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
