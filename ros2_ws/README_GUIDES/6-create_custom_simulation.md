@@ -45,7 +45,19 @@ worlds
                     └── floor_picture.png <-- SAVE HERE
 
 ```
-        
+If you use [photopea](https://www.photopea.com/) you can open up the image then go to:
+
+```View``` --> ```Show``` --> ```Grid```
+
+Then:
+
+```Edit``` --> ```Preferences```
+
+And change/color the grid based on course size. The template image is blank, square asphault, so a NxN grid allows you to create a scale for drawing your course. Most courses ar 10mx10m so I use a 10x10 grid to make sure the robot has enough clearance to actually navigate the course.
+
+The **brush tool** is the best for drawing curved lines by far, just increase the "smoothness" so the lines aren't jagged and ugly. Straight lines can be done easiest with the **shape tool**.
+
+
 ## 4. Change The Size of Your World (optional):
 In ```model.sdf```, you can change the dimensions of the ground plane. 
 ```bash

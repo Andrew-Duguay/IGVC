@@ -14,7 +14,6 @@ The workspace is organized into a standard ROS 2 architecture, with a strict sep
 
 ```yaml
 ros2_ws
-├── launch_guide.sh
 ├── build                 # Colcon generated
 ├── install               # Colcon generated
 ├── log                   # Colcon generated
@@ -30,11 +29,12 @@ ros2_ws
     │       ├── world2
     │       └── world3
     └── workbench         # Ros code goes here
+        ├── startup_robot 
         ├── my_ros_pkg
-        ├── my_other_ros_pkg
+        ├── ...
         └── standalone_node.py
 ```
-## The Two Golden Rules
+## The Three Golden Rules
 To keep your development process smooth and avoid "dependency hell", please adhere to these two structural rules:
 
 1. Always execute commands from the workspace root (ros2_ws)
@@ -48,3 +48,8 @@ To keep your development process smooth and avoid "dependency hell", please adhe
     * Why: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
 
     * Your Freedom: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
+
+3. Launch your robot using the startup_robot package.
+    * Why: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
+
+    * Your Freedom: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.

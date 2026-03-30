@@ -53,10 +53,16 @@ Rviz is what allows you to "see" what the robot "sees".
     
 Probably installed already if you chose ```ros-iron-desktop``` when you first got ROS2, but to be safe:
 
-    ```bash
-    sudo apt install ros-iron-rviz2
-    ```
+```bash
+sudo apt install ros-iron-rviz2
+```
 
 ## 4. Xterm
-I used xterm to...
-These are the 3 main dependencies. That's it!
+I used xterm to launch a standard ROS node in the example package. It's just to open a terminal for manual control of the robot. Just run this command:
+
+```bash
+sudo apt install xterm
+```
+
+
+These are the 4 main dependencies. That's it!
