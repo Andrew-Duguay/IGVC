@@ -93,12 +93,26 @@ for sim in simulations:
             f"world:={temp_world.name}"  # Pass the temp file to the launch file
         ]
 
+    # 6. Launch the robot
+    robot_cmd = [
+            'ros2', 'launch', 'startup_robot', "robot.launch.py"
+        ]
+
     print(f"🔄 Simulation {sim['id']} Running...", end='', flush=True)
     start_time = time.time()
 
-    process = subprocess.Popen(
+    sim_process = subprocess.Popen(
         sim_cmd,
         stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        preexec_fn=os.setsid,
+        env=os.environ.copy() 
+    )
+    time.sleep(3)
+    robot_process = subprocess.Popen(
+        robot_cmd,
+        stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
         text=True,
         preexec_fn=os.setsid,
@@ -114,10 +128,10 @@ for sim in simulations:
                 break
 
             # Wait 0.5s for new terminal output
-            ready, _, _ = select.select([process.stdout], [], [], 0.5)
+            ready, _, _ = select.select([sim_process.stdout], [], [], 0.5)
 
             if ready:
-                line = process.stdout.readline()
+                line = sim_process.stdout.readline()
                 
                 # If readline returns empty, Gazebo crashed or closed
                 if not line:
@@ -130,13 +144,24 @@ for sim in simulations:
 
     except KeyboardInterrupt:
         print("\nPipeline manually aborted by user.")
-        os.killpg(os.getpgid(process.pid), signal.SIGINT)
+        os.killpg(os.getpgid(sim_process.pid), signal.SIGINT)
+        os.killpg(os.getpgid(robot_process.pid), signal.SIGINT)
         os.remove(temp_world.name) # Clean up temp file
         sys.exit(1)
     
     finally:
-        os.killpg(os.getpgid(process.pid), signal.SIGINT)
-        process.wait()
+    # complete teardown
+        try:
+            os.killpg(os.getpgid(sim_process.pid), signal.SIGINT)
+        except ProcessLookupError:
+            pass # Already dead
+        
+        try:
+            os.killpg(os.getpgid(robot_process.pid), signal.SIGINT)
+        except ProcessLookupError:
+            pass # Already dead
+        sim_process.wait()
+        robot_process.wait()
         time.sleep(3)
     # 7. Clean up the temp file
     os.remove(temp_world.name)

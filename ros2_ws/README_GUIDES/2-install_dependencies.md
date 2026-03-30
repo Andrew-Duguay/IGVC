@@ -57,4 +57,6 @@ Probably installed already if you chose ```ros-iron-desktop``` when you first go
     sudo apt install ros-iron-rviz2
     ```
 
+## 4. Xterm
+I used xterm to...
 These are the 3 main dependencies. That's it!
