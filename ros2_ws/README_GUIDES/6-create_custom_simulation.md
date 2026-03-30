@@ -6,7 +6,6 @@ Creating a custom simulation for this framework is actually easy—it is done by
 
 Think of these simulations as **unit tests**. They should place the robot in a novel circumstance and test if it can behave correctly. Do your best to keep the simulation small and simple. Browse through the `/worlds` directory and look at the different simulation previews for reference.
 
----
 
 ## 1. Copy the Simulation Template and Launch File
 The template consists of a directory for the simulation and a launch script. Copy them both and rename them, replacing `template` with your simulation's name. Be descriptive about the contents of your world! 

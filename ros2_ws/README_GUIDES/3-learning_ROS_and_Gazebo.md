@@ -1,46 +1,8 @@
-# Some of the Basics
-If you're familiar with ROS and Gazebo you can go ahead and skip here. This specific guide is primarily for those trying to get up to speed with the how everything works.
-
-## 1. Tutorials
-The ROS tutorials can be found [here](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html) and Gazebo's are [here](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html). 
-
-Before you dive into development on this project it's essential you at least have the basics of the two down. The tutorials are pretty intuitive and easy to follow, you just have to ***ACTUALLY DO THEM***. 
-
-## 2. Do the Tutorials
-The ones [here](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html) and  [here](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html).
-
-Yes this is just step 1 repeated, that's because the tutorials are that important. Take a day and do them. They're kinda fun (to an engineer at least).
-
-## 3. 
-Gazebo and ROS are kinda similar in that they both run ```nodes``` and publish ```topics```. They kinda run in different worlds though.
-
-Normally ROS and Gazebo nodes/topics can't see eachother, but Gazebo has a "bridge" that allows the two to communicate. The process looks like this:
-1. Gazebo will render sensor data and publish it to a Gazebo topic like /right_camera_raw
-2. The bridge will convert Gazebo's /right_camera_raw into ROS2's /right_camera_raw
-3. ROS will do some stuff with that image as if it were from it's camera.
-4. ROS will publish to some arbitrary topic like /throttle
-5. The bridge will translate this into Gazebo topics, then use the data published to control the robot.
-
-This has some implications when working with the simulation. In your actual, full robot's environment you will have ROS2 nodes for all your sensors. Nodes that capture input from the sensor and publish it so other nodes can use the data. 
-
-An example of this might be /camera_raw publishes a 320x320x3 array of integers (3-channel colored image). You'd then likely do some image processing stuff to make use of the data.
-
-Likewise you would have ROS nodes that subscribe to topics and interact with the robot directly.
-
-An example of THIS would be a node subscribes to /desired_velocity and translates that into motor current to move the robot. These nodes directly drive the robot peripherals.
-
-Gazebo abstracts this. Your sensor-reading nodes will be ommitted, because Gazebo ALREADY publishes to /sensor_data_raw. Your peripheral's will be ommitted because gazebo moves the robot based on /cmd_vel.
-
-## 4. How they're Run
-Gazebo can be launched entirely separate from ROS. It's a bit boring though because there's nothing to move the robot.
-
-ROS can be run separate from Gazebo. It will do its thing, but there will be not data to do it on and nothing to listen to it.
-
-# 🤖 ROS 2 & Gazebo: The Essentials
+# ROS 2 & Gazebo: The Essentials
 
 If you’re already a ROS veteran, feel free to skip to the project-specific docs. If you’re still figuring ROS, **read this first.**
 
-## 1. The "No-Shortcut" Rule: Tutorials
+## 1. No Shortcuts: Tutorials
 Before you touch this codebase, you need a baseline. ROS 2 and Gazebo are powerful, but they aren't "guess-and-check" friendly.
 
 * **ROS 2 Beginner CLI Tools:** [Official Docs](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html)
