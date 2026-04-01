@@ -44,8 +44,9 @@ temp_world.close()
 
     # 5. Launch sim using temp world file, not original
 sim_cmd = [
-        'ros2', 'launch', 'skid_steer_robot', f"{args.world}.launch.py",
-        f"gui:={args.gui}"
+    'ros2', 'launch', 'skid_steer_robot', f"{world_name}.launch.py",
+    f"gui:={args.gui}",
+    f"world:={temp_world.name}" 
     ]
 
 # 6. Launch the robot
