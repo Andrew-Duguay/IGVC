@@ -4,6 +4,7 @@ from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
+    OpaqueFunction,
     SetEnvironmentVariable,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -12,37 +13,32 @@ from launch_ros.actions import Node
 import xacro
 
 
-def generate_launch_description():
+def launch_setup(context):
+    """Resolve course selection and return launch actions."""
     pkg_dir = get_package_share_directory('littleblue_sim')
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
 
+    course = LaunchConfiguration('course').perform(context)
+
+    # Select world file and spawn position based on course
+    if course == 'oval':
+        world_file = os.path.join(pkg_dir, 'worlds', 'igvc_course.sdf')
+        spawn_x, spawn_y, spawn_z, spawn_yaw = '-4', '0', '0.15', '0'
+    elif course == 'autonav':
+        world_file = os.path.join(pkg_dir, 'worlds', 'igvc_autonav.sdf')
+        spawn_x, spawn_y, spawn_z, spawn_yaw = '-10', '2', '0.15', '1.5708'
+    else:  # autonav2 (default)
+        world_file = os.path.join(pkg_dir, 'worlds', 'igvc_autonav2.sdf')
+        spawn_x, spawn_y, spawn_z, spawn_yaw = '-10', '2', '0.15', '1.5708'
+
     # Paths
     urdf_file = os.path.join(pkg_dir, 'urdf', 'littleblue.urdf.xacro')
-    world_file = os.path.join(pkg_dir, 'worlds', 'igvc_course.sdf')
     bridge_config = os.path.join(pkg_dir, 'config', 'bridge.yaml')
     models_dir = os.path.join(pkg_dir, 'models')
     worlds_dir = os.path.join(pkg_dir, 'worlds')
 
     # Process xacro
     robot_description = xacro.process_file(urdf_file).toxml()
-
-    # Launch arguments
-    headless = DeclareLaunchArgument(
-        'headless', default_value='false',
-        description='Run Ignition headless (no GUI)'
-    )
-
-    # Environment variables
-    resource_path = SetEnvironmentVariable(
-        'IGN_GAZEBO_RESOURCE_PATH',
-        ':'.join([models_dir, worlds_dir,
-                  os.environ.get('IGN_GAZEBO_RESOURCE_PATH', '')])
-    )
-
-    # Use OGRE 1.x — ogre2 fails without DISPLAY on headless Jetson
-    render_engine = SetEnvironmentVariable(
-        'IGN_RENDERING_ENGINE', 'ogre'
-    )
 
     # Ignition Gazebo
     gz_sim = IncludeLaunchDescription(
@@ -70,7 +66,8 @@ def generate_launch_description():
         arguments=[
             '-name', 'littleblue',
             '-topic', '/robot_description',
-            '-x', '-4', '-y', '0', '-z', '0.15',
+            '-x', spawn_x, '-y', spawn_y, '-z', spawn_z,
+            '-Y', spawn_yaw,
         ],
         output='screen',
     )
@@ -84,12 +81,41 @@ def generate_launch_description():
         output='screen',
     )
 
+    return [gz_sim, robot_state_pub, spawn_robot, bridge]
+
+
+def generate_launch_description():
+    pkg_dir = get_package_share_directory('littleblue_sim')
+    models_dir = os.path.join(pkg_dir, 'models')
+    worlds_dir = os.path.join(pkg_dir, 'worlds')
+
+    # Launch arguments
+    course_arg = DeclareLaunchArgument(
+        'course', default_value='autonav',
+        description='Course to load: oval or autonav'
+    )
+
+    headless = DeclareLaunchArgument(
+        'headless', default_value='false',
+        description='Run Ignition headless (no GUI)'
+    )
+
+    # Environment variables — set both IGN_ (Fortress compat) and GZ_ (Harmonic)
+    resource_path_ign = SetEnvironmentVariable(
+        'IGN_GAZEBO_RESOURCE_PATH',
+        ':'.join([models_dir, worlds_dir,
+                  os.environ.get('IGN_GAZEBO_RESOURCE_PATH', '')])
+    )
+    resource_path_gz = SetEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        ':'.join([models_dir, worlds_dir,
+                  os.environ.get('GZ_SIM_RESOURCE_PATH', '')])
+    )
+
     return LaunchDescription([
+        course_arg,
         headless,
-        resource_path,
-        render_engine,
-        gz_sim,
-        robot_state_pub,
-        spawn_robot,
-        bridge,
+        resource_path_ign,
+        resource_path_gz,
+        OpaqueFunction(function=launch_setup),
     ])

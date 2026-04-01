@@ -1,58 +1,67 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- RGB Camera (front-facing, matching D435i FOV) -->
-  <link name="camera_link">
-    <visual>
-      <geometry>
-        <box size="0.03 0.09 0.025"/>
-      </geometry>
-      <material name="dark_grey"/>
-    </visual>
-    <collision>
-      <geometry>
-        <box size="0.03 0.09 0.025"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="0.1"/>
-      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
-    </inertial>
-  </link>
+  <!-- Camera pair macro: creates RGB + depth links at a lateral offset -->
+  <xacro:macro name="camera_pair" params="prefix y_offset">
+    <!-- RGB Camera -->
+    <link name="${prefix}_camera_link">
+      <visual>
+        <geometry>
+          <box size="0.03 0.09 0.025"/>
+        </geometry>
+        <material name="dark_grey"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.03 0.09 0.025"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+    </link>
 
-  <joint name="camera_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="camera_link"/>
-    <origin xyz="${chassis_length/2 - 0.02} 0 ${chassis_height + 0.02}" rpy="0 0 0"/>
-  </joint>
+    <joint name="${prefix}_camera_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${prefix}_camera_link"/>
+      <!-- Tilted down 5° (pitch=0.09) and outward 15° (yaw=±0.26) toward lane lines -->
+      <origin xyz="${chassis_length/2 - 0.02} ${y_offset} ${chassis_height + 0.02}" rpy="0 0.09 ${0.26 * y_offset/0.28}"/>
+    </joint>
 
-  <link name="camera_optical_link"/>
-  <joint name="camera_optical_joint" type="fixed">
-    <parent link="camera_link"/>
-    <child link="camera_optical_link"/>
-    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
-  </joint>
+    <link name="${prefix}_camera_optical_link"/>
+    <joint name="${prefix}_camera_optical_joint" type="fixed">
+      <parent link="${prefix}_camera_link"/>
+      <child link="${prefix}_camera_optical_link"/>
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
 
-  <!-- Depth Camera (co-located with RGB) -->
-  <link name="depth_camera_link">
-    <inertial>
-      <mass value="0.01"/>
-      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
-    </inertial>
-  </link>
+    <!-- Depth Camera (co-located with RGB) -->
+    <link name="${prefix}_depth_camera_link">
+      <inertial>
+        <mass value="0.01"/>
+        <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+      </inertial>
+    </link>
 
-  <joint name="depth_camera_joint" type="fixed">
-    <parent link="camera_link"/>
-    <child link="depth_camera_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+    <joint name="${prefix}_depth_camera_joint" type="fixed">
+      <parent link="${prefix}_camera_link"/>
+      <child link="${prefix}_depth_camera_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
 
-  <link name="depth_camera_optical_link"/>
-  <joint name="depth_camera_optical_joint" type="fixed">
-    <parent link="depth_camera_link"/>
-    <child link="depth_camera_optical_link"/>
-    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
-  </joint>
+    <link name="${prefix}_depth_camera_optical_link"/>
+    <joint name="${prefix}_depth_camera_optical_joint" type="fixed">
+      <parent link="${prefix}_depth_camera_link"/>
+      <child link="${prefix}_depth_camera_optical_link"/>
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Left camera (+Y = left, chassis_width/2 - 0.02) -->
+  <xacro:camera_pair prefix="left" y_offset="0.28"/>
+  <!-- Right camera (-Y = right) -->
+  <xacro:camera_pair prefix="right" y_offset="-0.28"/>
 
   <!-- 2D LiDAR (top of chassis) -->
   <link name="lidar_link">
@@ -77,6 +86,31 @@
     <parent link="base_link"/>
     <child link="lidar_link"/>
     <origin xyz="0 0 ${chassis_height + 0.05}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Rear electronics box — blocks ~90° of LiDAR behind the robot -->
+  <link name="rear_electronics_link">
+    <visual>
+      <geometry>
+        <box size="0.15 0.25 0.12"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.15 0.25 0.12"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="rear_electronics_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rear_electronics_link"/>
+    <origin xyz="${-chassis_length/4} 0 ${chassis_height + 0.06}" rpy="0 0 0"/>
   </joint>
 
   <!-- IMU (chassis center) -->

@@ -11,7 +11,7 @@
       <wheel_radius>${wheel_radius}</wheel_radius>
       <max_linear_acceleration>1.0</max_linear_acceleration>
       <max_angular_acceleration>2.0</max_angular_acceleration>
-      <odom_publish_frequency>30</odom_publish_frequency>
+      <odom_publish_frequency>100</odom_publish_frequency>
       <topic>cmd_vel</topic>
       <odom_topic>odom</odom_topic>
       <tf_topic>tf</tf_topic>
@@ -34,14 +34,14 @@
     <mu2>0.0</mu2>
   </gazebo>
 
-  <!-- RGB Camera sensor -->
-  <gazebo reference="camera_link">
-    <sensor name="rgb_camera" type="camera">
+  <!-- Left RGB Camera sensor -->
+  <gazebo reference="left_camera_link">
+    <sensor name="left_rgb_camera" type="camera">
       <always_on>true</always_on>
       <update_rate>15</update_rate>
-      <topic>image_raw</topic>
+      <topic>left_camera/image_raw</topic>
       <camera>
-        <horizontal_fov>1.2112</horizontal_fov>
+        <horizontal_fov>1.4835</horizontal_fov>
         <image>
           <width>640</width>
           <height>480</height>
@@ -55,22 +55,22 @@
     </sensor>
   </gazebo>
 
-  <!-- Depth Camera sensor -->
-  <gazebo reference="depth_camera_link">
-    <sensor name="depth_camera" type="depth_camera">
+  <!-- Right RGB Camera sensor -->
+  <gazebo reference="right_camera_link">
+    <sensor name="right_rgb_camera" type="camera">
       <always_on>true</always_on>
       <update_rate>15</update_rate>
-      <topic>depth/image_raw</topic>
+      <topic>right_camera/image_raw</topic>
       <camera>
-        <horizontal_fov>1.5184</horizontal_fov>
+        <horizontal_fov>1.4835</horizontal_fov>
         <image>
           <width>640</width>
           <height>480</height>
-          <format>R_FLOAT32</format>
+          <format>R8G8B8</format>
         </image>
         <clip>
           <near>0.1</near>
-          <far>10</far>
+          <far>100</far>
         </clip>
       </camera>
     </sensor>
@@ -85,10 +85,10 @@
       <lidar>
         <scan>
           <horizontal>
-            <samples>360</samples>
+            <samples>270</samples>
             <resolution>1</resolution>
-            <min_angle>-3.14159</min_angle>
-            <max_angle>3.14159</max_angle>
+            <min_angle>-2.35619</min_angle>
+            <max_angle>2.35619</max_angle>
           </horizontal>
           <vertical>
             <samples>1</samples>
@@ -141,10 +141,10 @@
       <navsat>
         <position_sensing>
           <horizontal>
-            <noise type="gaussian"><mean>0</mean><stddev>0.5</stddev></noise>
+            <noise type="gaussian"><mean>0</mean><stddev>0.000005</stddev></noise>
           </horizontal>
           <vertical>
-            <noise type="gaussian"><mean>0</mean><stddev>1.0</stddev></noise>
+            <noise type="gaussian"><mean>0</mean><stddev>0.00001</stddev></noise>
           </vertical>
         </position_sensing>
       </navsat>

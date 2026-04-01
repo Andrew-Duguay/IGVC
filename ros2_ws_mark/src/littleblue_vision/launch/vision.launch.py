@@ -8,23 +8,53 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('littleblue_vision')
     params_file = os.path.join(pkg_share, 'config', 'vision_params.yaml')
 
-    lane_detector = Node(
+    left_lane_detector = Node(
         package='littleblue_vision',
         executable='lane_detector_node',
-        name='lane_detector_node',
-        parameters=[params_file],
+        name='left_lane_detector',
+        parameters=[params_file, {
+            'image_topic': '/left_camera/image_raw',
+            'camera_lateral_offset': 0.28,
+        }],
         output='screen',
     )
 
-    obstacle_projector = Node(
+    right_lane_detector = Node(
+        package='littleblue_vision',
+        executable='lane_detector_node',
+        name='right_lane_detector',
+        parameters=[params_file, {
+            'image_topic': '/right_camera/image_raw',
+            'camera_lateral_offset': -0.28,
+        }],
+        output='screen',
+    )
+
+    left_obstacle_projector = Node(
         package='littleblue_vision',
         executable='obstacle_projector_node',
-        name='obstacle_projector_node',
-        parameters=[params_file],
+        name='left_obstacle_projector',
+        parameters=[params_file, {
+            'depth_topic': '/left_camera/depth/image_raw',
+            'camera_lateral_offset': 0.28,
+        }],
+        output='screen',
+    )
+
+    right_obstacle_projector = Node(
+        package='littleblue_vision',
+        executable='obstacle_projector_node',
+        name='right_obstacle_projector',
+        parameters=[params_file, {
+            'depth_topic': '/right_camera/depth/image_raw',
+            'camera_lateral_offset': -0.28,
+        }],
         output='screen',
     )
 
     return LaunchDescription([
-        lane_detector,
-        obstacle_projector,
+        left_lane_detector,
+        right_lane_detector,
+        left_obstacle_projector,
+        right_obstacle_projector,
     ])

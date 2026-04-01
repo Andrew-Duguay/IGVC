@@ -28,15 +28,20 @@ class ObstacleProjectorNode(Node):
         self.declare_parameter('camera_height', 0.27)
         self.declare_parameter('camera_forward_offset', 0.38)
         self.declare_parameter('depth_patch_size', 5)
+        self.declare_parameter('camera_lateral_offset', 0.0)
         self.declare_parameter('min_range', 0.3)
         self.declare_parameter('max_range', 8.0)
         self.declare_parameter('sync_slop', 0.1)
+        self.declare_parameter('detection_topic', '/yolo/detections')
+        self.declare_parameter('depth_topic', '/depth/image_raw')
 
         self.bridge = CvBridge()
 
         # Synchronized subscribers
-        det_sub = Subscriber(self, Detection2DArray, '/yolo/detections')
-        depth_sub = Subscriber(self, Image, '/depth/image_raw')
+        detection_topic = self.get_parameter('detection_topic').value
+        depth_topic = self.get_parameter('depth_topic').value
+        det_sub = Subscriber(self, Detection2DArray, detection_topic)
+        depth_sub = Subscriber(self, Image, depth_topic)
 
         slop = self.get_parameter('sync_slop').value
         self.sync = ApproximateTimeSynchronizer(
@@ -62,6 +67,7 @@ class ObstacleProjectorNode(Node):
         depth_cy = p('depth_cy').value
         cam_h = p('camera_height').value
         cam_fwd = p('camera_forward_offset').value
+        cam_lat = p('camera_lateral_offset').value
         patch_size = p('depth_patch_size').value
         min_r = p('min_range').value
         max_r = p('max_range').value
@@ -103,7 +109,7 @@ class ObstacleProjectorNode(Node):
 
             # Project to base_footprint frame
             X = depth + cam_fwd
-            Y = -x_norm * depth
+            Y = -x_norm * depth + cam_lat
             Z = cam_h - y_norm * depth
 
             # Range filter

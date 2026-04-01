@@ -24,6 +24,10 @@ setup(
         'console_scripts': [
             'lane_detector_node = littleblue_vision.lane_detector_node:main',
             'obstacle_projector_node = littleblue_vision.obstacle_projector_node:main',
+            'lane_candidate_node = littleblue_vision.lane_detector_candidates:main',
+            'lane_benchmark_node = littleblue_vision.lane_benchmark_node:main',
+            'lane_accumulator_node = littleblue_vision.lane_accumulator_node:main',
+            'lidar_obstacle_node = littleblue_vision.lidar_obstacle_node:main',
         ],
     },
 )

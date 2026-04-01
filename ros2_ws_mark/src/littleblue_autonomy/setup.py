@@ -23,6 +23,9 @@ setup(
     entry_points={
         'console_scripts': [
             'lane_follower_node = littleblue_autonomy.lane_follower_node:main',
+            'data_recorder_node = littleblue_autonomy.data_recorder_node:main',
+            'safety_monitor_node = littleblue_autonomy.safety_monitor_node:main',
+            'cmd_vel_to_joy_node = littleblue_autonomy.cmd_vel_to_joy_node:main',
         ],
     },
 )

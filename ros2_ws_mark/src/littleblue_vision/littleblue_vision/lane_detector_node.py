@@ -31,15 +31,18 @@ class LaneDetectorNode(Node):
         self.declare_parameter('rgb_cy', 240.0)
         self.declare_parameter('camera_height', 0.27)
         self.declare_parameter('camera_forward_offset', 0.38)
+        self.declare_parameter('camera_lateral_offset', 0.0)
         self.declare_parameter('min_range', 0.4)
         self.declare_parameter('max_range', 6.0)
         self.declare_parameter('frame_skip', 2)
+        self.declare_parameter('image_topic', '/image_raw')
 
         self.bridge = CvBridge()
         self.frame_count = 0
 
+        image_topic = self.get_parameter('image_topic').value
         self.image_sub = self.create_subscription(
-            Image, '/image_raw', self.image_callback, 10)
+            Image, image_topic, self.image_callback, 10)
         self.pc_pub = self.create_publisher(PointCloud2, '/lane_points', 10)
         self.mask_pub = self.create_publisher(Image, '/lane_mask', 10)
 
@@ -63,6 +66,7 @@ class LaneDetectorNode(Node):
             'cy': p('rgb_cy').value,
             'cam_h': p('camera_height').value,
             'cam_fwd': p('camera_forward_offset').value,
+            'cam_lat': p('camera_lateral_offset').value,
             'min_r': p('min_range').value,
             'max_r': p('max_range').value,
         }
@@ -121,6 +125,7 @@ class LaneDetectorNode(Node):
         cy = params['cy']
         cam_h = params['cam_h']
         cam_fwd = params['cam_fwd']
+        cam_lat = params['cam_lat']
 
         # Normalized image coordinates (optical frame)
         y_norm = (vs.astype(np.float32) - cy) / fy
@@ -142,7 +147,7 @@ class LaneDetectorNode(Node):
         # Y = left (negative of rightward optical x)
         # Z = 0 (ground plane)
         X = t + cam_fwd
-        Y = -x_norm * t
+        Y = -x_norm * t + cam_lat
         Z = np.zeros_like(X)
 
         # Range filter

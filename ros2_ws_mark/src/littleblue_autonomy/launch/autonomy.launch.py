@@ -17,11 +17,52 @@ def generate_launch_description():
         description='Launch RViz'
     )
 
+    approach_arg = DeclareLaunchArgument(
+        'approach', default_value='A',
+        description='Approach mode: baseline, A, B, C, D'
+    )
+
+    record_arg = DeclareLaunchArgument(
+        'record', default_value='false',
+        description='Launch data recorder node'
+    )
+
     lane_follower = Node(
         package='littleblue_autonomy',
         executable='lane_follower_node',
         name='lane_follower_node',
-        parameters=[params_file],
+        parameters=[params_file, {'approach_mode': LaunchConfiguration('approach')}],
+        output='screen',
+    )
+
+    data_recorder = Node(
+        package='littleblue_autonomy',
+        executable='data_recorder_node',
+        name='data_recorder_node',
+        parameters=[{'use_sim_time': True,
+                     'approach_label': LaunchConfiguration('approach')}],
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('record')),
+    )
+
+    safety_monitor = Node(
+        package='littleblue_autonomy',
+        executable='safety_monitor_node',
+        name='safety_monitor_node',
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+    )
+
+    cmd_vel_to_joy = Node(
+        package='littleblue_autonomy',
+        executable='cmd_vel_to_joy_node',
+        name='cmd_vel_to_joy_node',
+        parameters=[{
+            'use_sim_time': True,
+            'max_linear_speed': 1.0,
+            'max_angular_speed': 2.0,
+            'publish_rate': 20.0,
+        }],
         output='screen',
     )
 
@@ -37,6 +78,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         rviz_arg,
+        approach_arg,
+        record_arg,
         lane_follower,
+        data_recorder,
+        safety_monitor,
+        cmd_vel_to_joy,
         rviz_node,
     ])
