@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(skid_steer_robot)
+project(littleblue_sim)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,7 +7,6 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(gazebo_ros REQUIRED)
 
 # Install all resource directories
 install(
@@ -16,7 +15,7 @@ install(
     launch
     urdf
     worlds
-    #models   # optional — create the folder only if you have meshes/textures
+    #models   
   DESTINATION
     share/${PROJECT_NAME}
 )
