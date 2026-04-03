@@ -8,9 +8,8 @@
   <license>[TODO]</license>
 
   <depend>example_pkg</depend>
-<!--
-  <depend>[DEPENDENCY_2]</depend>
--->
+  <depend>littleblue_autonomy</depend>
+  <depend>littleblue_vision</depend>
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

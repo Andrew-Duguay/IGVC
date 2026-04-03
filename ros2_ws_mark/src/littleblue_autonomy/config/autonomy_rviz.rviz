@@ -102,10 +102,16 @@ Visualization Manager:
         Value: /joy_viz
 
     - Class: rviz_default_plugins/Image
-      Name: CameraDetection
+      Name: LeftCameraDetection
       Enabled: true
       Topic:
-        Value: /candidate/debug_image
+        Value: /candidate/left_debug
+
+    - Class: rviz_default_plugins/Image
+      Name: RightCameraDetection
+      Enabled: true
+      Topic:
+        Value: /candidate/right_debug
 
     - Class: rviz_default_plugins/Image
       Name: ControllerDashboard

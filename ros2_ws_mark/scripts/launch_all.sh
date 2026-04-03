@@ -48,6 +48,7 @@ ros2 run littleblue_vision lane_candidate_node --ros-args \
     -p use_sim_time:=true \
     -p image_topic:=/left_camera/image_raw \
     -p output_topic:=/candidate/left_lane_points \
+    -p debug_topic:=/candidate/left_debug \
     -p camera_lateral_offset:=0.28 \
     -p camera_forward_offset:=0.38 \
     -p camera_pitch:=0.09 \
@@ -62,6 +63,7 @@ ros2 run littleblue_vision lane_candidate_node --ros-args \
     -p use_sim_time:=true \
     -p image_topic:=/right_camera/image_raw \
     -p output_topic:=/candidate/right_lane_points \
+    -p debug_topic:=/candidate/right_debug \
     -p camera_lateral_offset:=-0.28 \
     -p camera_forward_offset:=0.38 \
     -p camera_pitch:=0.09 \

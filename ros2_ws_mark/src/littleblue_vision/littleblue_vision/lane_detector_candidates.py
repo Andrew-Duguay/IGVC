@@ -84,10 +84,12 @@ class LaneCandidateNode(Node):
         image_topic = self.get_parameter('image_topic').value
         self.create_subscription(Image, image_topic, self._image_cb, 10)
         self.declare_parameter('output_topic', '/candidate/lane_points')
+        self.declare_parameter('debug_topic', '/candidate/debug_image')
         output_topic = self.get_parameter('output_topic').value
+        debug_topic = self.get_parameter('debug_topic').value
         self.pc_pub = self.create_publisher(PointCloud2, output_topic, 10)
         self.mask_pub = self.create_publisher(Image, '/candidate/lane_mask', 10)
-        self.debug_pub = self.create_publisher(Image, '/candidate/debug_image', 10)
+        self.debug_pub = self.create_publisher(Image, debug_topic, 10)
 
         self.get_logger().info(f'Lane candidate node started (method={method})')
 
