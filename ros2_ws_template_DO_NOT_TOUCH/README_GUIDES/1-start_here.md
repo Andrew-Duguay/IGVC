@@ -1,0 +1,55 @@
+
+# 🚀 Simulation Framework: Quick Start Guide
+
+Welcome to the autonomous vehicle simulation framework. This repository provides a robust collection of simulation environments and a streamlined workflow to help you prototype and test your autonomous systems.
+
+> **💡 LISTEN :** To get the most out of this framework without running into setup headaches, we highly recommend reading this brief guide. Once your dependencies are configured, the workflow is fast, safe, and intuitive.
+
+
+
+## 📂 Core Repository Structure
+
+The workspace is organized into a standard ROS 2 architecture, with a strict separation between the core simulation engine and your custom experimental code.
+
+
+```yaml
+ros2_ws
+├── build                 # Colcon generated
+├── install               # Colcon generated
+├── log                   # Colcon generated
+└── src                   
+    ├── skid_steer_robot  # Simulation stuff lives here, be careful.
+    │   ├── launch              # Launch files for starting the sim
+    │   │   ├── world1.launch.py
+    │   │   ├── world2.launch.py
+    │   │   └── world3.launch.py
+    │   ├── urdf                # description of the robot
+    │   └── worlds              # Contains the code for worlds  
+    │       ├── world1
+    │       ├── world2
+    │       └── world3
+    └── workbench         # Ros code goes here
+        ├── startup_robot 
+        ├── my_ros_pkg
+        ├── ...
+        └── standalone_node.py
+```
+## The Three Golden Rules
+To keep your development process smooth and avoid "dependency hell", please adhere to these two structural rules:
+
+1. Always execute commands from the workspace root (ros2_ws)
+    * Why: It guarantees that all relative paths, environment variables, and sourced setup files resolve correctly.
+
+    * The Risk: If you change the execution flow or try launching scripts from deep within subdirectories, you will likely break underlying dependencies and find yourself crawling through nested config files trying to fix paths.
+
+    * The Takeaway: Don't reinvent the wheel. Use the provided tools and launch files exactly as intended from the root directory.
+
+2. Keep all your code in the ```/workbench``` directory
+    * Why: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
+
+    * Your Freedom: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
+
+3. Launch your robot using the startup_robot package.
+    * Why: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
+
+    * Your Freedom: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.

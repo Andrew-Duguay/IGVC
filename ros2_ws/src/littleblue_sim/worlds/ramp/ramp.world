@@ -1,0 +1,116 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="ramp">
+
+    <plugin name='ignition::gazebo::systems::Physics' filename='ignition-gazebo-physics-system'/>
+    <plugin name='ignition::gazebo::systems::UserCommands' filename='ignition-gazebo-user-commands-system'/>
+    <plugin name='ignition::gazebo::systems::SceneBroadcaster' filename='ignition-gazebo-scene-broadcaster-system'/>
+    <plugin name="ignition::gazebo::systems::Contact" filename="libignition-gazebo-contact-system.so">
+    </plugin>
+    
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <scene>
+      <ambient>0.1 0.1 0.1 0.1</ambient>
+      <background>0.8 0.8 0.8 1.0</background>
+      <grid>true</grid>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Course (centered) and bounding tiles so no cliffs-->
+    <include> <uri>model://floor</uri> <pose>0 0 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>n</name> <pose>10 0 0 0 0 0</pose>  </include>
+    <include> <uri>model://floor_boundary</uri> <name>s</name> <pose>-10 0 0 0 0 0</pose>  </include>
+    <include> <uri>model://floor_boundary</uri> <name>e</name> <pose>0 10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>w</name> <pose>0 -10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>ne</name> <pose>10 10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>nw</name> <pose>10 -10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>se</name> <pose>-10 10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>sw</name> <pose>-10 -10 0 0 0 0</pose> </include>
+    
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>-1.8 14.4 8.6 0.0 0.545 -1.65</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+    <include>
+      <uri>model://ramp</uri>
+      <name>ramp_1</name>
+      <pose>0.61 -0.1 0.05 -0 -0 1.575</pose>
+    </include>
+
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_1</name>
+      <pose>-0.556677 2.27014 0 0 0 -1.00249</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_2</name>
+      <pose>-0.767901 4.56848 0 0 -0 1.62966</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_3</name>
+      <pose>-0.692546 3.30252 0 0 0 -1.56179</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_4</name>
+      <pose>2.12347 4.26732 0 0 -0 1.56252</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_5</name>
+      <pose>2.15493 3.09202 0 0 -0 1.5653</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_6</name>
+      <pose>2.22103 -3.068 0 0 -0 1.57989</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_7</name>
+      <pose>2.20748 -4.30352 0 0 -0 1.5622</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_8</name>
+      <pose>-0.787855 -3.09813 0 0 -0 1.57337</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_9</name>
+      <pose>-0.787666 -4.26945 0 0 -0 1.5876</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_10</name>
+      <pose>-0.558838 -2.04749 0 0 -0 0.868178</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_11</name>
+      <pose>1.83199 -1.92375 0 0 0 -0.834673</pose>
+    </include>
+    <include>
+      <uri>model://line_boundary</uri>
+      <name>line_boundary_12</name>
+      <pose>1.88926 2.0135 0 0 -0 0.823667</pose>
+    </include>
+
+  </world>
+</sdf>
