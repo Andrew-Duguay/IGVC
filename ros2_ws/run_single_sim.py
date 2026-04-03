@@ -24,7 +24,7 @@ world_name = args.world
 pkg_share = get_package_share_directory('littleblue_sim')
 
 # 1. Get world file path
-world_path = os.path.join(pkg_share, 'worlds', world_name, f"{world_name}.sdf")
+world_path = os.path.join(pkg_share, 'worlds', world_name, f"{world_name}.world")
 if args.speed != 1.0:
     # 2. Read the original src world file in buffer
     with open(world_path, "r") as f:
@@ -38,7 +38,7 @@ if args.speed != 1.0:
     )
 
     # 4. Create a temporary world file with updated buffer value
-    temp_world = tempfile.NamedTemporaryFile(delete=False, suffix='.sdf', mode='w')
+    temp_world = tempfile.NamedTemporaryFile(delete=False, suffix='.world', mode='w')
     temp_world.write(world_content)
     temp_world.close()
     world_path = temp_world.name
