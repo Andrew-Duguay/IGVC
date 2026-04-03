@@ -20,8 +20,8 @@ new_rate = int(1000 * args.speed)
 # -----------------------------
 # Dynamic Paths & Safe Temp File
 # -----------------------------
-# 1. Get path dynamically (No hardcoded paths!)
-pkg_share = get_package_share_directory('skid_steer_robot')
+# 1. Get path dynamically
+pkg_share = get_package_share_directory('littleblue_sim')
 
 # -----------------------------
 # Simulation Config

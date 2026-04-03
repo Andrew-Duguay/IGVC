@@ -102,6 +102,18 @@
       <axis xyz="0 0 1"/>
       <dynamics damping="0.1" friction="0.1"/>
     </joint>
+
+    <!-- collision sensors on wheels to detect the lane line crossing-->
+    <gazebo reference="${prefix}_wheel_link">
+      <sensor name="${prefix}_wheel_sensor" type="contact">
+        <topic>/${prefix}_wheel_sensor</topic>
+        <always_on>true</always_on>
+        <update_rate>50</update_rate>
+        <contact>
+          <collision>${prefix}_wheel_link_collision</collision>
+        </contact>
+      </sensor>
+    </gazebo>
   </xacro:macro>
 
   <xacro:drive_wheel prefix="left" y_offset="${track_width/2 + wheel_width/2}"/>
@@ -131,10 +143,33 @@
     <xacro:sphere_inertia m="${caster_mass}" r="${caster_radius}"/>
   </link>
 
-  <joint name="caster_joint" type="fixed">
+  <joint name="caster_joint" type="continuous">
     <parent link="base_link"/>
     <child link="caster_link"/>
     <origin xyz="${chassis_length/3} 0 ${-(wheel_radius - caster_radius)}" rpy="0 0 0"/>
-  </joint>
+    <axis xyz="0 1 0"/> </joint>
+
+  <gazebo reference="caster_link"> <!---->
+    <sensor name="caster_sensor" type="contact">
+      <topic>/caster_sensor</topic> 
+      <always_on>true</always_on>
+      <update_rate>50</update_rate>
+      <contact>
+        <collision>caster_link_collision</collision>
+      </contact>
+    </sensor>
+  </gazebo>
+
+  <!--Collision sensor on chassis to detect object collision-->
+  <gazebo reference="base_link">
+    <sensor name="chassis_sensor" type="contact">
+      <topic>/chassis_sensor</topic>
+      <always_on>true</always_on>
+      <update_rate>50</update_rate>
+      <contact>
+        <collision>base_footprint_fixed_joint_lump__base_link_collision</collision>
+      </contact>
+    </sensor>
+  </gazebo>
 
 </robot>

@@ -15,14 +15,14 @@ install(
     launch
     urdf
     worlds
-    #models   
+    models   
   DESTINATION
     share/${PROJECT_NAME}
 )
 
 # Install the Python executable
 install(PROGRAMS
-  finish_line/finish_line.py
+  pass_or_fail/pass_or_fail.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

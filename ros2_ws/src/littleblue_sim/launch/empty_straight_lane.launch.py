@@ -26,11 +26,10 @@ def generate_launch_description():
     }
     pkg = get_package_share_directory('littleblue_sim')
 
-    # GET PATHS TO WORLD
-    default_world_file = os.path.join(pkg, 'worlds', world_name, f"{world_name}.world")
-    model_path = os.path.join(pkg, 'worlds', world_name, 'custom_models')
-
-    # 1. DECLARE WORLD ARGUMENT (Fixes your previous argparse issue!)
+### DEFINE THE WORLD FILE USED ### 
+    # GET PATH TO WORLD
+    default_world_file = os.path.join(pkg, 'worlds', world_name, f"{world_name}.sdf")
+    # DECLARE WORLD ARGUMENT (IN CASE ALT WORLD FILE SPECIFIED)
     world_arg_decl = DeclareLaunchArgument(
         'world',
         default_value=default_world_file,
@@ -38,13 +37,22 @@ def generate_launch_description():
     )
     world_file_config = LaunchConfiguration('world')
 
-    # 2. UPDATE ENVIRONMENT VARIABLE FOR IGNITION
-    # Ignition uses GZ_SIM_RESOURCE_PATH instead of GAZEBO_MODEL_PATH
-    if 'GZ_SIM_RESOURCE_PATH' in os.environ:
-        model_path += os.pathsep + os.environ['GZ_SIM_RESOURCE_PATH']
+#### SET ENVIRNOMENT VARIABLE ####
+    # GET PATH TO MODELS
+    model_path = os.path.join(pkg, 'models') 
+    floor_path = os.path.join(pkg, 'worlds', world_name, 'custom_models')   
+    # COMBINE THEM
+    combined_model_path = f"{model_path}:{floor_path}"
+    # UPDATE ENVIRONMENT VARIABLE FOR IGNITION
+    current_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    if current_resource_path:
+        final_resource_path = f"{current_resource_path}:{combined_model_path}"
+    else:
+        final_resource_path = combined_model_path
+    # TELL ROS TO USE IT
     set_gazebo_model_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
-        value=model_path
+        value=final_resource_path
     )
 
     # DEFINE THE ROBOT NODE
@@ -81,15 +89,15 @@ def generate_launch_description():
             ]
         )
     
-    # DEFINE THE FINISH LINE TRACKER NODE
+    # DEFINE THE pass_or_fail TRACKER NODE
     x1_arg = LaunchConfiguration('x1', default=finish_line_points['x1'])
     y1_arg = LaunchConfiguration('y1', default=finish_line_points['y1'])
     x2_arg = LaunchConfiguration('x2', default=finish_line_points['x2'])
     y2_arg = LaunchConfiguration('y2', default=finish_line_points['y2'])
-    finish_line_node = Node(
+    pass_or_fail_node = Node(
         package='littleblue_sim',
-        executable='finish_line.py',
-        name='finish_line_node',
+        executable='pass_or_fail.py',
+        name='pass_or_fail_node',
         output='screen',
         parameters=[
             {'use_sim_time': True},
@@ -106,15 +114,32 @@ def generate_launch_description():
     # 4. ADD THE CLOCK BRIDGE (MANDATORY)
     # Because you use 'use_sim_time': True, ROS 2 needs Gazebo's clock.
     # Without this bridge, your nodes will wait forever and do nothing!
-    clock_bridge_node = Node(
+    gz_chassis_topic = f"/world/{world_name}/model/littleblue_sim/link/base_footprint/sensor/chassis_sensor/contact"
+    gz_caster_topic = f"/world/{world_name}/model/littleblue_sim/link/caster_link/sensor/caster_sensor/contact"
+    gz_left_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/left_wheel_link/sensor/left_wheel_sensor/contact"
+    gz_right_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/right_wheel_link/sensor/right_wheel_sensor/contact"
+
+    ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
             '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist',
             '/odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
-            # The Transform Bridge (Gazebo -> ROS)
-            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V'
+            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
+            
+            # Bridge the contact sensors using f-strings
+            f"{gz_chassis_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_caster_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_left_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts"
+        ],
+        # REMAP TO YOUR CLEAN PYTHON TOPICS
+        remappings=[
+            (gz_chassis_topic, '/chassis_sensor'),
+            (gz_caster_topic, '/caster_sensor'),
+            (gz_left_wheel_topic, '/left_wheel_sensor'),
+            (gz_right_wheel_topic, '/right_wheel_sensor')
         ],
         output='screen'
     )
@@ -139,9 +164,9 @@ def generate_launch_description():
         # Start Gazebo
         launch_gazebo_action,
         # Start Bridge
-        clock_bridge_node,
+        ros_gz_bridge,
         # spawn Robot
         robot_node,
-        # launch Finish Line
-        finish_line_node
+        # launch pass_or_fail
+        pass_or_fail_node
     ])

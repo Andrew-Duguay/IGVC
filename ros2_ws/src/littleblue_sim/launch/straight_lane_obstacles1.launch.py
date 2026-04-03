@@ -24,29 +24,50 @@ def generate_launch_description():
         'x2': '-1.0',
         'y2': '-4.0'
     }
-    pkg = get_package_share_directory('skid_steer_robot')
+    pkg = get_package_share_directory('littleblue_sim')
 
-    # GET PATHS TO WORLD
-    world_file = os.path.join(pkg, 'worlds', world_name, f"{world_name}.world")
-    model_path = os.path.join(pkg, 'worlds', world_name, 'custom_models')
+### DEFINE THE WORLD FILE USED ### 
+    # GET PATH TO WORLD
+    default_world_file = os.path.join(pkg, 'worlds', world_name, f"{world_name}.sdf")
+    # DECLARE WORLD ARGUMENT (IN CASE ALT WORLD FILE SPECIFIED)
+    world_arg_decl = DeclareLaunchArgument(
+        'world',
+        default_value=default_world_file,
+        description='Full path to the world file'
+    )
+    world_file_config = LaunchConfiguration('world')
 
-    # Update GAZEBO_MODEL_PATH TO SEE CUSTOM MODELS
-    if 'GAZEBO_MODEL_PATH' in os.environ:
-        model_path += os.pathsep + os.environ['GAZEBO_MODEL_PATH']
+#### SET ENVIRNOMENT VARIABLE ####
+    # GET PATH TO MODELS
+    model_path = os.path.join(pkg, 'models') 
+    floor_path = os.path.join(pkg, 'worlds', world_name, 'custom_models')   
+    # COMBINE THEM
+    combined_model_path = f"{model_path}:{floor_path}"
+    # UPDATE ENVIRONMENT VARIABLE FOR IGNITION
+    current_resource_path = os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    if current_resource_path:
+        final_resource_path = f"{current_resource_path}:{combined_model_path}"
+    else:
+        final_resource_path = combined_model_path
+    # TELL ROS TO USE IT
     set_gazebo_model_path = SetEnvironmentVariable(
-        name='GAZEBO_MODEL_PATH',
-        value=model_path
+        name='GZ_SIM_RESOURCE_PATH',
+        value=final_resource_path
     )
 
     # DEFINE THE ROBOT NODE
-    xacro_file = os.path.join(pkg, 'urdf', 'robot.urdf.xacro')
+    xacro_file = os.path.join(pkg, 'urdf', 'littleblue.urdf.xacro')
     doc = xacro.process_file(xacro_file, mappings={"scale": os.getenv("SCALE", "1.0")})
     robot_description = {"robot_description": doc.toxml()}
+    
+    # 3. UPDATE ROBOT SPAWNER FOR IGNITION
+    # gazebo_ros 'spawn_entity.py' becomes ros_gz_sim 'create'
     robot_node = Node(
-            package='gazebo_ros',
-            executable='spawn_entity.py',
+            package='ros_gz_sim',
+            executable='create',
             arguments=[
-                '-topic', 'robot_description', '-entity', 'skid_steer_robot',
+                '-topic', 'robot_description', 
+                '-name', 'littleblue_sim',
                 '-x', robot_position['x'],
                 '-y', robot_position['y'],
                 '-z', robot_position['z'],
@@ -68,53 +89,84 @@ def generate_launch_description():
             ]
         )
     
-    # DEFINE THE FINISH LINE TRACKER NODE (OPENS IN NEW TERMINAL)
-    # PUT YOUR FINISH LINE HERE
+    # DEFINE THE pass_or_fail TRACKER NODE
     x1_arg = LaunchConfiguration('x1', default=finish_line_points['x1'])
     y1_arg = LaunchConfiguration('y1', default=finish_line_points['y1'])
     x2_arg = LaunchConfiguration('x2', default=finish_line_points['x2'])
     y2_arg = LaunchConfiguration('y2', default=finish_line_points['y2'])
-    finish_line_node = Node(
-        package='skid_steer_robot',
-        executable='finish_line.py',
-        name='finish_line_node',
+    pass_or_fail_node = Node(
+        package='littleblue_sim',
+        executable='pass_or_fail.py',
+        name='pass_or_fail_node',
         output='screen',
         parameters=[
             {'use_sim_time': True},
             {'x1': x1_arg},
             {'y1': y1_arg},
             {'x2': x2_arg},
-            {'y2': y2_arg}
+            {'y2': y2_arg},
+            {'start_x': float(robot_position['x'])},
+            {'start_y': float(robot_position['y'])},
+            {'start_yaw': float(robot_position['Y'])}
         ]
     )
 
-    # DEFINE THE GAZEBO LAUNCH
-    gui_arg = LaunchConfiguration('gui')    # grab value from CLI
-    gui_cmd = DeclareLaunchArgument(        # Declare the arguments so the system knows they exist
-            'gui',
-            default_value='true',
-            description='Run the simulation with GUI (true) or without GUI (false)'
-        )
+    # 4. ADD THE CLOCK BRIDGE (MANDATORY)
+    # Because you use 'use_sim_time': True, ROS 2 needs Gazebo's clock.
+    # Without this bridge, your nodes will wait forever and do nothing!
+    gz_chassis_topic = f"/world/{world_name}/model/littleblue_sim/link/base_footprint/sensor/chassis_sensor/contact"
+    gz_caster_topic = f"/world/{world_name}/model/littleblue_sim/link/caster_link/sensor/caster_sensor/contact"
+    gz_left_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/left_wheel_link/sensor/left_wheel_sensor/contact"
+    gz_right_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/right_wheel_link/sensor/right_wheel_sensor/contact"
+
+    ros_gz_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
+            '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist',
+            '/odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
+            
+            # Bridge the contact sensors using f-strings
+            f"{gz_chassis_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_caster_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_left_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts"
+        ],
+        # REMAP TO YOUR CLEAN PYTHON TOPICS
+        remappings=[
+            (gz_chassis_topic, '/chassis_sensor'),
+            (gz_caster_topic, '/caster_sensor'),
+            (gz_left_wheel_topic, '/left_wheel_sensor'),
+            (gz_right_wheel_topic, '/right_wheel_sensor')
+        ],
+        output='screen'
+    )
+
+    # 5. UPDATE GAZEBO LAUNCH ACTION FOR IGNITION
     launch_gazebo_action = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')
+                os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
             ),
             launch_arguments={
-                'world': world_file,
-                'gui': gui_arg
+                # Pass the world file and the '-r' flag to run immediately--render-engine ogre
+                'gz_args': [world_file_config, ' -r '] 
             }.items()
         )
 
     return LaunchDescription([
-        gui_cmd,
+        world_arg_decl,
         # Set new path first
         set_gazebo_model_path,
         # Start state publisher
         robot_state_publisher_node,
         # Start Gazebo
         launch_gazebo_action,
+        # Start Bridge
+        ros_gz_bridge,
         # spawn Robot
         robot_node,
-        #launch Finish Line
-        finish_line_node
+        # launch pass_or_fail
+        pass_or_fail_node
     ])

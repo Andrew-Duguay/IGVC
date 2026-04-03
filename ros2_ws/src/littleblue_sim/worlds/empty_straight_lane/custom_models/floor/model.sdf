@@ -3,7 +3,7 @@
   <model name="custom_course">
     <static>true</static>
     <link name="link">
-      <collision name="collision">
+      <collision name="floor_collision">
         <geometry>
           <box>
             <size>10 10 0.1</size> 
@@ -19,7 +19,7 @@
         </geometry>
         
         <material>
-          <ambient>0.8 0.8 0.8 1</ambient>
+          <ambient>0.1 0.1 0.1 1</ambient>
           <diffuse>0.8 0.8 0.8 1</diffuse>
           <specular>0.1 0.1 0.1 1</specular>
           
