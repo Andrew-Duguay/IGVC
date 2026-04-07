@@ -73,6 +73,24 @@ def launch_setup(context, *args, **kwargs):
             }.items()
         )
 
+    step_size_str = LaunchConfiguration('step_size').perform(context)
+    rtf_override_action = TimerAction(
+        period=2.0, 
+        actions=[
+            ExecuteProcess(
+                cmd=[
+                    'ign', 'service', '-s', f'/world/{world_name}/set_physics',
+                    '--reqtype', 'ignition.msgs.Physics',
+                    '--reptype', 'ignition.msgs.Boolean',
+                    # Inject BOTH the step size and the RTF override here
+                    '--req', f'max_step_size: {step_size_str} real_time_factor: {speed_factor}',
+                    '--timeout', '3000'
+                ],
+                output='screen'
+            )
+        ]
+    )
+
     # 5. LAUNCH THE ROBOT STATE PUBLISHER (BLUEPRINT OF ROBOT)
     doc = xacro.process_file(robot_file_path, mappings={"scale": os.getenv("SCALE", "1.0")})
     robot_description = {"robot_description": doc.toxml()}
@@ -104,10 +122,6 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # 7. CREATE BRIDGE BETWEEN ROS AND GAZEBO
-    gz_chassis_topic = f"/world/{world_name}/model/littleblue_sim/link/base_footprint/sensor/chassis_sensor/contact"
-    gz_caster_topic = f"/world/{world_name}/model/littleblue_sim/link/caster_link/sensor/caster_sensor/contact"
-    gz_left_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/left_wheel_link/sensor/left_wheel_sensor/contact"
-    gz_right_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/right_wheel_link/sensor/right_wheel_sensor/contact"
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -127,38 +141,8 @@ def launch_setup(context, *args, **kwargs):
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-            # Contact Sensors
-            f"{gz_chassis_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
-            f"{gz_caster_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
-            f"{gz_left_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
-            f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts"
         ],       
-        # Contact Sensors: Remap for cleanliness
-        remappings=[
-            (gz_chassis_topic, '/chassis_sensor'),
-            (gz_caster_topic, '/caster_sensor'),
-            (gz_left_wheel_topic, '/left_wheel_sensor'),
-            (gz_right_wheel_topic, '/right_wheel_sensor')
-        ],
         output='screen'
-    )
-
-    # 8. LAUNCH "REFEREE". MONITORS SIMULATION FOR COURSE COMPLETION, LINE-CROSSING, AND OBSTACLE COLLISION
-    pass_or_fail_node = Node(
-        package='littleblue_sim',
-        executable='pass_or_fail.py',
-        name='pass_or_fail_node',
-        output='screen',
-        parameters=[
-            {'use_sim_time': True},
-            {'x1':        float(finish_line_points['x1'])},
-            {'y1':        float(finish_line_points['y1'])},
-            {'x2':        float(finish_line_points['x2'])},
-            {'y2':        float(finish_line_points['y2'])},
-            {'start_x':   float(robot_position['x'])},
-            {'start_y':   float(robot_position['y'])},
-            {'start_yaw': float(robot_position['Y'])}
-        ]
     )
 
     nodes_to_start = [
@@ -172,8 +156,7 @@ def launch_setup(context, *args, **kwargs):
         nodes_to_start.extend([
             robot_state_publisher_node, 
             robot_node, 
-            ros_gz_bridge, 
-            pass_or_fail_node
+            ros_gz_bridge,
         ])
     return nodes_to_start
                    
@@ -202,12 +185,19 @@ def generate_launch_description():
         'world_building_mode',
         default_value='false',
         description='Set to true to run the simulation without the robot. This allows easy editing of objects in the simulation'
-    )    
+    )   
+
+    step_size_arg_decl = DeclareLaunchArgument(
+        'step_size',
+        default_value='0.001', # Default to standard high-fidelity physics
+        description='Physics max step size. Increase (e.g., 0.003) for faster batch simulations.'
+    ) 
 
     return LaunchDescription([
         world_arg_decl,
         speed_arg_decl,
         gui_arg_decl,
         world_building_arg_decl,
+        step_size_arg_decl,
         OpaqueFunction(function=launch_setup)
     ])

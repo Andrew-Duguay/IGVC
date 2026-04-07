@@ -45,7 +45,7 @@ class PassOrFailNode(Node):
         self.declare_parameter('start_x', 0.0)
         self.declare_parameter('start_y', 0.0)
         self.declare_parameter('start_yaw', 0.0)
-        self.declare_parameter('timeout_limit', 30.0)
+        self.declare_parameter('timeout', 30.0)
         
         x1 = self.get_parameter('x1').get_parameter_value().double_value
         y1 = self.get_parameter('y1').get_parameter_value().double_value
@@ -54,8 +54,7 @@ class PassOrFailNode(Node):
         self.start_x = self.get_parameter('start_x').value
         self.start_y = self.get_parameter('start_y').value
         self.start_yaw = self.get_parameter('start_yaw').value
-        self.timeout = self.get_parameter('timeout_limit').double_value
-
+        self.timeout = self.get_parameter('timeout').value
         self.pass_or_fail = Line(Point(x1, y1), Point(x2, y2))
         self.current_position = Point(-1000, -1000)
         self.last_position = Point(-1000, -1000)
@@ -114,11 +113,19 @@ class PassOrFailNode(Node):
                 self.get_logger().info("[INFO] Test started.")
 
     def timer_callback(self):
+        if self.finished:
+            return
         current_time = self.get_clock().now()
+        if current_time.nanoseconds == 0:
+            return
+        if self.start_time is None:
+            self.start_time = current_time
+            self.get_logger().info("Simulation clock received! Referee has started.")
+            return
         elapsed_duration = current_time - self.start_time
         elapsed_seconds = elapsed_duration.nanoseconds / 1e9
-        if elapsed_seconds > timeout:
-            self.get_logger().error(f"[FAILURE] Timeout at 40s")
+        if elapsed_seconds > self.timeout:
+            self.get_logger().error(f"[FAILURE] Timeout at {elapsed_seconds}s")
             self.finished = True
 
     def collision_callback(self, msg):

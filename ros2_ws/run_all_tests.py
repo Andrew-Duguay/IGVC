@@ -12,6 +12,8 @@ parser.add_argument('--speed', type=float, default=1.0,
                     help="Simulation speed multiplier (default=1.0)")
 parser.add_argument('--gui', type=str, default="false",
                     help="Show gui during batch simulation (default=false)")
+parser.add_argument('--step_size', type=str, default=0.001,
+                    help="Sets the interval between simulation time calculations (default=0.001)")
 args = parser.parse_args()
 
 simulations = [
@@ -41,6 +43,7 @@ for sim in simulations:
             f"world:={sim_name}",
             f"speed:={args.speed}",
             f"timeout:={sim_timeout}",
+            f"step-size:={args.step_size}",
         ]
 
     robot_cmd = [

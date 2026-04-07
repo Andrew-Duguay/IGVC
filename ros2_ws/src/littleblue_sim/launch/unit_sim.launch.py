@@ -3,7 +3,7 @@ import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, DeclareLaunchArgument, OpaqueFunction
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, DeclareLaunchArgument, OpaqueFunction, ExecuteProcess, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -68,10 +68,27 @@ def launch_setup(context, *args, **kwargs):
                 os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
             ),
             launch_arguments={
-                # Pass the world file and the '-r' flag to run immediately--render-engine ogre
                 'gz_args': gz_arguments
             }.items()
         )
+
+    step_size_str = LaunchConfiguration('step_size').perform(context)
+    rtf_override_action = TimerAction(
+        period=2.0, 
+        actions=[
+            ExecuteProcess(
+                cmd=[
+                    'ign', 'service', '-s', f'/world/{world_name}/set_physics',
+                    '--reqtype', 'ignition.msgs.Physics',
+                    '--reptype', 'ignition.msgs.Boolean',
+                    # Inject BOTH the step size and the RTF override here
+                    '--req', f'max_step_size: {step_size_str} real_time_factor: {speed_factor}',
+                    '--timeout', '3000'
+                ],
+                output='screen'
+            )
+        ]
+    )
 
     # 5. LAUNCH THE ROBOT STATE PUBLISHER (BLUEPRINT OF ROBOT)
     doc = xacro.process_file(robot_file_path, mappings={"scale": os.getenv("SCALE", "1.0")})
@@ -171,7 +188,8 @@ def launch_setup(context, *args, **kwargs):
     nodes_to_start = [
         gz_env,
         ign_env,
-        launch_gazebo_action
+        launch_gazebo_action,
+        rtf_override_action
     ]
     world_building_arg = LaunchConfiguration('world_building_mode').perform(context).lower()
     is_world_building = world_building_arg in ["true", "True", "1"]
@@ -217,11 +235,18 @@ def generate_launch_description():
         description='Simulation time in seconds before failure condition'
     )   
 
+    step_size_arg_decl = DeclareLaunchArgument(
+        'step_size',
+        default_value='0.001', # Default to standard high-fidelity physics
+        description='Physics max step size. Increase (e.g., 0.003) for faster batch simulations.'
+    )
+
     return LaunchDescription([
         world_arg_decl,
         speed_arg_decl,
         gui_arg_decl,
         timeout_arg_decl,
         world_building_arg_decl,
+        step_size_arg_decl,
         OpaqueFunction(function=launch_setup)
     ])
