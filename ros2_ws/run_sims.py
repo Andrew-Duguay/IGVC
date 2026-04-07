@@ -6,62 +6,22 @@ import os
 import signal
 import sys
 import select
-import re
-import tempfile
-from ament_index_python.packages import get_package_share_directory
 
-# Parse the speed multiplier
 parser = argparse.ArgumentParser(description="Run batch simulations")
 parser.add_argument('--speed', type=float, default=1.0,
                     help="Simulation speed multiplier (default=1.0)")
+parser.add_argument('--gui', type=str, default="false",
+                    help="Show gui during batch simulation (default=false)")
 args = parser.parse_args()
-new_rate = int(1000 * args.speed)
 
-# -----------------------------
-# Dynamic Paths & Safe Temp File
-# -----------------------------
-# 1. Get path dynamically
-pkg_share = get_package_share_directory('littleblue_sim')
-
-# -----------------------------
-# Simulation Config
-# -----------------------------
 simulations = [
-    {
-        'id': 1,
-        'name': 'ramp',
-        'TIMEOUT': 30,        
-    },
-    {
-        'id': 2,
-        'name': 'empty_straight_lane',
-        'TIMEOUT': 30,        
-    },
-    {
-        'id': 3,
-        'name': 'straight_lane_obstacles1',
-        'TIMEOUT': 30,        
-    },
-    {
-        'id': 4,
-        'name': 'straight_lane_obstacles2',
-        'TIMEOUT': 30,        
-    },
-    {
-        'id': 5,
-        'name': 'straight_lane_obstacles3',
-        'TIMEOUT': 30,        
-    },
-    {
-        'id': 6,
-        'name': 'straight_lane_obstacles4',
-        'TIMEOUT': 30,        
-    },
-    {
-        'id': 7,
-        'name': 'chicane1',
-        'TIMEOUT': 60,        
-    },
+    {'name': 'ramp', 'timeout': 30.0},
+    {'name': 'empty_straight_lane', 'timeout': 30.0},
+    {'name': 'straight_lane_obstacles1', 'timeout': 30.0},
+    {'name': 'straight_lane_obstacles2', 'timeout': 30.0},
+    {'name': 'straight_lane_obstacles3', 'timeout': 30.0},
+    {'name': 'straight_lane_obstacles4', 'timeout': 30.0},
+    {'name': 'chicane1', 'timeout': 45.0},
 ]
 
 SUCCESS_PHRASE = "[SUCCESS]"
@@ -72,40 +32,22 @@ print("🚀🚀🚀 BATCH SIMULATIONS STARTED 🚀🚀🚀")
 print("="*40)
 
 for sim in simulations:
-    status = ""
-    # 1. Get world file path
-    world_path = os.path.join(pkg_share, 'worlds', sim['name'], f"{sim['name']}.world")
+    sim_name = sim['name']
+    sim_timeout = sim['timeout']
 
-    # 2. Read the original src world file in buffer
-    with open(world_path, "r") as f:
-        world_content = f.read()
-
-    # 3. Replace time update rate in buffer
-    world_content = re.sub(
-        r"<real_time_update_rate>\d+</real_time_update_rate>",
-        f"<real_time_update_rate>{new_rate}</real_time_update_rate>",
-        world_content
-    )
-
-    # 4. Create a temporary world file with updated buffer value
-    temp_world = tempfile.NamedTemporaryFile(delete=False, suffix='.world', mode='w')
-    temp_world.write(world_content)
-    temp_world.close()
-
-    # 5. Launch sim using temp world file, not original
     sim_cmd = [
-            'ros2', 'launch', 'littleblue_sim', f"{sim['name']}.launch.py",
-            'gui:=false',
-            f"world:={temp_world.name}"  # Pass the temp file to the launch file
+            'ros2', 'launch', 'littleblue_sim', 'unit_sim.launch.py',
+            f"gui:={args.gui}",
+            f"world:={sim_name}",
+            f"speed:={args.speed}",
+            f"timeout:={sim_timeout}",
         ]
 
-    # 6. Launch the robot
     robot_cmd = [
             'ros2', 'launch', 'startup_robot', "robot.launch.py"
         ]
 
-    print(f"🔄 Simulation {sim['id']} Running...", end='', flush=True)
-    start_time = time.time()
+    print(f"🔄 Simulating {sim_name}", end='', flush=True)
 
     sim_process = subprocess.Popen(
         sim_cmd,
@@ -128,34 +70,25 @@ for sim in simulations:
     try:
         # 6. Non-Blocking Read Logic
         while True:
-            # Check timeout
-            if (time.time() - start_time) > sim['TIMEOUT']:
-                print(f"\r❌ Simulation {sim['id']} Failed to complete in {sim['TIMEOUT']}s\033[K")
-                break
-
             # Wait 0.5s for new terminal output
             ready, _, _ = select.select([sim_process.stdout], [], [], 0.5)
-
             if ready:
-                line = sim_process.stdout.readline()
-                
+                line = sim_process.stdout.readline()                
                 # If readline returns empty, Gazebo crashed or closed
                 if not line:
-                    print(f"\r💥 Simulation {sim['id']} crashed after {time.time() - start_time}s\033[K")
+                    print(f"\r💥 Simulation {sim_name} crashed\033[K")
                     break
-
                 if SUCCESS_PHRASE in line:
-                    print(f"\r✅ Simulation {sim['id']} completed in {time.time() - start_time}s\033[K")
+                    print(f"\r✅ Simulation {sim_name} passed\033[K")
                     break
                 if FAILURE_PHRASE in line:
-                    print(f"\r❌ Simulation {sim['id']} Failed by crossing a line or colliding with obstacles\033[K")
+                    clean_line = line.strip()
+                    print(f"\r❌ {clean_line}\033[K")
                     break
-
     except KeyboardInterrupt:
         print("\nPipeline manually aborted by user.")
         os.killpg(os.getpgid(sim_process.pid), signal.SIGINT)
         os.killpg(os.getpgid(robot_process.pid), signal.SIGINT)
-        os.remove(temp_world.name) # Clean up temp file
         sys.exit(1)
     
     finally:
@@ -172,8 +105,6 @@ for sim in simulations:
         sim_process.wait()
         robot_process.wait()
         time.sleep(3)
-    # 7. Clean up the temp file
-    os.remove(temp_world.name)
 
         
 

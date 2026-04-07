@@ -1,0 +1,479 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="full_course">
+    <!-- System plugins -->
+    <plugin name='ignition::gazebo::systems::Physics'           filename='ignition-gazebo-physics-system'/>
+    <plugin name='ignition::gazebo::systems::UserCommands'      filename='ignition-gazebo-user-commands-system'/>
+    <plugin name='ignition::gazebo::systems::SceneBroadcaster'  filename='ignition-gazebo-scene-broadcaster-system'/>
+    <plugin name="ignition::gazebo::systems::Contact"           filename="libignition-gazebo-contact-system.so"/>   
+    <plugin name="ignition::gazebo::systems::Sensors"           filename="ignition-gazebo-sensors-system"/>
+    <plugin name="ignition::gazebo::systems::Imu"               filename="ignition-gazebo-imu-system"/>
+    <plugin name="ignition::gazebo::systems::NavSat"            filename="ignition-gazebo-navsat-system" />
+
+    
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <scene>
+      <ambient>0.1 0.1 0.1 0.1</ambient>
+      <background>0.8 0.8 0.8 1.0</background>
+      <grid>true</grid>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Course (centered) and bounding tiles so no cliffs-->
+    <include> <uri>model://floor</uri> <pose>0 0 0 0 0 0</pose> </include>
+    <!-- <include> <uri>model://floor_boundary</uri> <name>n</name> <pose>10 0 0 0 0 0</pose>  </include>
+    <include> <uri>model://floor_boundary</uri> <name>s</name> <pose>-10 0 0 0 0 0</pose>  </include>
+    <include> <uri>model://floor_boundary</uri> <name>e</name> <pose>0 10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>w</name> <pose>0 -10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>ne</name> <pose>10 10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>nw</name> <pose>10 -10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>se</name> <pose>-10 10 0 0 0 0</pose> </include>
+    <include> <uri>model://floor_boundary</uri> <name>sw</name> <pose>-10 -10 0 0 0 0</pose> </include> -->
+    
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>-5.2 -2.2 14.4 0 1.48 -0.02</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel</name>
+      <pose>-9.96267 -10.2394 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_0</name>
+      <pose>-8.35724 -11.7564 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone</name>
+      <pose>-6.68228 -10.0533 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_0</name>
+      <pose>-4.65263 -11.516 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_1</name>
+      <pose>-3.70712 -9.83601 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_2</name>
+      <pose>-0.435755 -11.2176 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_1</name>
+      <pose>-0.394324 -11.8301 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_2</name>
+      <pose>2.82763 -11.8807 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_3</name>
+      <pose>8.19254 -9.46416 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_4</name>
+      <pose>5.31833 -10.1531 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_3</name>
+      <pose>9.48845 -4.08395 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4</name>
+      <pose>10.0991 -4.05546 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_1</name>
+      <pose>10.5517 -4.12295 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_2</name>
+      <pose>5.81266 -1.64019 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_3</name>
+      <pose>6.28362 -1.65373 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_4</name>
+      <pose>6.87778 -1.70145 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_5</name>
+      <pose>7.41087 -1.76907 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_6</name>
+      <pose>9.4985 -2.03657 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_7</name>
+      <pose>10.313 -2.11659 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_8</name>
+      <pose>7.47129 0.397816 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_9</name>
+      <pose>8.05773 0.45268 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_10</name>
+      <pose>8.77515 0.587541 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_11</name>
+      <pose>9.52197 0.550067 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_4_12</name>
+      <pose>10.2197 0.391293 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_5</name>
+      <pose>9.24418 2.48043 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6</name>
+      <pose>10.0015 2.47843 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6_3</name>
+      <pose>9.23198 14.2399 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6_4</name>
+      <pose>8.98621 11.8317 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6_5</name>
+      <pose>5.4479 13.0605 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6_6</name>
+      <pose>3.47212 12.1068 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6_7</name>
+      <pose>1.12975 12.9626 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_6_1</name>
+      <pose>9.37504 5.35546 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://cone</uri>
+      <name>cone_5</name>
+      <pose>-2.09508 12.2666 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7</name>
+      <pose>-3.94179 13.9701 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_1</name>
+      <pose>-3.8542 13.2631 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_2</name>
+      <pose>-3.80086 12.4937 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_3</name>
+      <pose>-6.04 12.8742 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_4</name>
+      <pose>-6.12178 12.2277 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_5</name>
+      <pose>-6.15044 11.5137 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_6</name>
+      <pose>-6.32941 10.8543 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_7</name>
+      <pose>-6.4755 10.2032 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_8</name>
+      <pose>-8.2807 15.9259 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_9</name>
+      <pose>-6.58798 9.55073 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_10</name>
+      <pose>-8.93905 12.7004 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_11</name>
+      <pose>-8.8356 13.3002 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_12</name>
+      <pose>-8.27275 15.2438 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_13</name>
+      <pose>-1.96288 13.1125 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_14</name>
+      <pose>-11.9011 7.97168 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_15</name>
+      <pose>-11.4382 7.35161 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_16</name>
+      <pose>-11.0577 6.46842 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_17</name>
+      <pose>-10.6541 5.47122 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_18</name>
+      <pose>-10.5154 4.28525 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_19</name>
+      <pose>-10.5012 3.25358 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_20</name>
+      <pose>-10.5668 2.38582 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_21</name>
+      <pose>-10.4225 1.35623 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_22</name>
+      <pose>-10.4184 0.338595 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_23</name>
+      <pose>-10.5732 -0.764844 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_24</name>
+      <pose>-11.1043 -1.83167 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_25</name>
+      <pose>-11.6451 -2.71624 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_26</name>
+      <pose>-12.2752 -3.50023 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_27</name>
+      <pose>-12.6936 -4.19322 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_28</name>
+      <pose>-15.0465 8.06932 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_29</name>
+      <pose>-15.716 7.25742 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_30</name>
+      <pose>-16.2807 6.4781 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_31</name>
+      <pose>-16.5642 5.70083 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_32</name>
+      <pose>-16.731 4.82347 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_33</name>
+      <pose>-16.8522 3.8879 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_34</name>
+      <pose>-16.8955 2.89201 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_35</name>
+      <pose>-16.9698 1.88108 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_36</name>
+      <pose>-16.9293 0.807501 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_37</name>
+      <pose>-16.9081 -0.347231 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_38</name>
+      <pose>-16.876 -1.4528 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_39</name>
+      <pose>-16.7142 -2.40915 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_40</name>
+      <pose>-16.2619 -3.26786 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_41</name>
+      <pose>-15.7945 -3.94161 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_42</name>
+      <pose>-15.1931 -4.75032 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43</name>
+      <pose>-15.3396 -0.728096 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_44</name>
+      <pose>-12.8114 -2.10477 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://ramp</uri>
+      <name>ramp</name>
+      <pose>-13.6752 1.04703 0 0 -0 1.51237</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43_1</name>
+      <pose>-14.5401 5.47871 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43_2</name>
+      <pose>-12.3423 5.45713 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43_3</name>
+      <pose>-15.1315 2.77295 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43_4</name>
+      <pose>-15.7928 1.59251 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43_5</name>
+      <pose>-11.6192 2.36049 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>models://barrel</uri>
+      <name>barrel_7_43_6</name>
+      <pose>-11.2388 0.978072 0 0 -0 0</pose>
+    </include>
+
+
+  </world>
+</sdf>
