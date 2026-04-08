@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<robot name="littleblue" xmlns:xacro="http://www.ros.org/wiki/xacro">
-
-  <xacro:include filename="$(find littleblue_sim)/urdf/materials.xacro"/>
-  <xacro:include filename="$(find littleblue_sim)/urdf/chassis.xacro"/>
-  <xacro:include filename="$(find littleblue_sim)/urdf/sensors.xacro"/>
-  <xacro:include filename="$(find littleblue_sim)/urdf/gazebo_plugins.xacro"/>
-
-</robot>

@@ -1,11 +1,13 @@
 # Adding Your Code For Development
 
-This part is easy. See the directory ```/workbench```? Remember that? That's **yours**.
+This part is easy. See the directory ```/workbench```? Remember that? That's **yours**. You do what you want in there. The only requirement is that you don't remove ```/startup_robot```. That package is specially placed as the single entry point to your robot. 
+
+Anything you want to test, all your ROS nodes for the robot, are to be configured to launch with ```ros2 launch startup_robot robot.launch.py```. You code that file however your heart desires, but that's how you launch your robot.
 ```yaml
 ros2_ws
 ├── ...
 └── src                   
-    ├── skid_steer_robot  
+    ├── littleblue_sim  
     └── workbench         
         ├── startup_robot # MUST KEEP
         ├── ...           # Anything you want
@@ -16,16 +18,16 @@ Whatever ROS nodes and packages you want to develop, organize it however you wan
 
 ## The Three Golden Rules
 
-1. Always execute commands from the workspace root (ros2_ws)
+### 1. Always execute commands from the workspace root (```ros2_ws```)
 
-    * Blah blah blah
+### 2. Keep all your code in the ```/workbench``` directory
+* **Why**: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
 
-2. Keep all your code in the ```/workbench``` directory
-    * Why: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
+* **Your Freedom**: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
 
-    * Your Freedom: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
+### 3. Launch your robot using the startup_robot package (
+Remember the command: ```ros2 launch startup_robot robot.launch.py```
 
-3. Launch your robot using the startup_robot package.
-    * Why: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
+* **Why**: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
 
-    * Your Freedom: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.
+* **Your Freedom**: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.

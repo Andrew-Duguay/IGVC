@@ -18,38 +18,38 @@ ros2_ws
 ├── install               # Colcon generated
 ├── log                   # Colcon generated
 └── src                   
-    ├── skid_steer_robot  # Simulation stuff lives here, be careful.
-    │   ├── launch              # Launch files for starting the sim
-    │   │   ├── world1.launch.py
-    │   │   ├── world2.launch.py
-    │   │   └── world3.launch.py
-    │   ├── urdf                # description of the robot
-    │   └── worlds              # Contains the code for worlds  
+    ├── littleblue_sim  # Simulation stuff lives here, be careful.
+    │   ├── urdf   # description of the robot
+    │   ├── launch # launch scripts
+    │   |   ├── large_sim.launch.py 
+    │   |   └── unit_sim.launch.py  
+    │   └── worlds # Contains the code for worlds 
     │       ├── world1
     │       ├── world2
     │       └── world3
-    └── workbench         # Ros code goes here
-        ├── startup_robot 
+    └── workbench
+        ├── startup_robot # ROS code's entry point
         ├── my_ros_pkg
         ├── ...
         └── standalone_node.py
 ```
+
 ## The Three Golden Rules
 To keep your development process smooth and avoid "dependency hell", please adhere to these two structural rules:
 
-1. Always execute commands from the workspace root (ros2_ws)
-    * Why: It guarantees that all relative paths, environment variables, and sourced setup files resolve correctly.
+### 1. Always execute commands from the workspace root (ros2_ws)
+* ***Why***: It guarantees that all relative paths, environment variables, and sourced setup files resolve correctly.
 
-    * The Risk: If you change the execution flow or try launching scripts from deep within subdirectories, you will likely break underlying dependencies and find yourself crawling through nested config files trying to fix paths.
+* ***The Risk***: If you change the execution flow or try launching scripts from deep within subdirectories, you will likely break underlying dependencies and find yourself crawling through nested config files trying to fix paths.
 
-    * The Takeaway: Don't reinvent the wheel. Use the provided tools and launch files exactly as intended from the root directory.
+* ***The Takeaway***: Don't reinvent the wheel. Use the provided tools and launch files exactly as intended from the root directory.
 
-2. Keep all your code in the ```/workbench``` directory
-    * Why: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
+### 2. Keep all your code in the ```/workbench``` directory
+* ***Why***: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
 
-    * Your Freedom: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
+* ***Your Freedom***: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
 
-3. Launch your robot using the startup_robot package.
-    * Why: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
+### 3. Launch your robot using the startup_robot package.
+* ***Why***: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
 
-    * Your Freedom: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.
+* ***Your Freedom***: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.

@@ -2,7 +2,7 @@
 
 If you’re already a ROS veteran, feel free to skip to the project-specific docs. If you’re still figuring ROS, **read this first.**
 
-## 1. No Shortcuts: Tutorials
+## 1. No Shortcuts: Do The Tutorials
 Before you touch this codebase, you need a baseline. ROS 2 and Gazebo are powerful, but they aren't "guess-and-check" friendly.
 
 * **ROS 2 Beginner CLI Tools:** [Official Docs](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html)

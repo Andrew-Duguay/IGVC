@@ -16,6 +16,8 @@ parser.add_argument('--speed', type=float, default=1.0,
                     help="Simulation speed multiplier (default=1.0)")
 parser.add_argument('--timeout', type=float, default=30.0,
                     help="Timeout for failure condition (default=30)")
+parser.add_argument('--step_size', type=float, default=0.001,
+                    help="Step size of simulation time (default=0.001)")
 args = parser.parse_args()
 
 sim_cmd = [
@@ -24,6 +26,7 @@ sim_cmd = [
         f"world:={args.world}",
         f"speed:={args.speed}",
         f"timeout:={args.timeout}",
+        f"step_size:={args.step_size}",
     ]
 
 robot_cmd = [

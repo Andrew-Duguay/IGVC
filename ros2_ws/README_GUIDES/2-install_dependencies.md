@@ -67,13 +67,18 @@ sudo apt install xterm
 ## 5. NumPy
 ROS2 was done using an older version of NumPy, before NumPy 2+. Therefore you need an older version.
 
-Run this in your container to uninstall your current NumPy : ```pip uninstall numpy```
-
-Run this to get a compatible version: ```pip install "numpy==1.26.4"```
+Run this in your container to uninstall your current NumPy and install a compatible version : 
+```bash
+pip uninstall numpy
+pip install "numpy==1.26.4"
+```
 
 ## 6. OpenCV
 Any version of OpenCV newer than 4.10 will hard-require you to have NumPy 2.0+ so if you just install it straight away then you'll undo the last step. Pip will automatically install the newer version of NumPy.
-* ❌ ```pip install opencv-python```
-* ✅ ```pip install "opencv-python<4.10.0"```
 
-These are the 4 main dependencies. That's it!
+```bash
+pip install "opencv-python<4.10.0"
+```
+> **❌ WARNING**: Do NOT use the generic command ```pip install opencv-python```
+
+### That's all the dependencies! That's it!
