@@ -151,4 +151,15 @@
     </sensor>
   </gazebo>
 
+<gazebo>
+  <plugin
+    filename="ignition-gazebo-pose-publisher-system"
+    name="ignition::gazebo::systems::PosePublisher">
+    <publish_link_pose>false</publish_link_pose>
+    <use_pose_vector_msg>false</use_pose_vector_msg>
+    <publish_nested_models>false</publish_nested_models>
+    <publish_model_pose>true</publish_model_pose>
+  </plugin>
+</gazebo>
+
 </robot>

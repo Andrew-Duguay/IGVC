@@ -124,6 +124,7 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # 7. CREATE BRIDGE BETWEEN ROS AND GAZEBO
+    gz_pose_topic = f"/model/littleblue_sim/pose"
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -143,6 +144,10 @@ def launch_setup(context, *args, **kwargs):
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
+            f"{gz_pose_topic}@geometry_msgs/msg/Pose[ignition.msgs.Pose"
+        ],
+        remappings=[
+            (gz_pose_topic, '/world_pose'),
         ],       
         output='screen'
     )

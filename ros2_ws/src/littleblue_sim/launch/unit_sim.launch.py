@@ -127,6 +127,7 @@ def launch_setup(context, *args, **kwargs):
     gz_caster_topic = f"/world/{world_name}/model/littleblue_sim/link/caster_link/sensor/caster_sensor/contact"
     gz_left_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/left_wheel_link/sensor/left_wheel_sensor/contact"
     gz_right_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/right_wheel_link/sensor/right_wheel_sensor/contact"
+    gz_pose_topic = f"/model/littleblue_sim/pose"
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -146,18 +147,20 @@ def launch_setup(context, *args, **kwargs):
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-            # Contact Sensors
+            # Gazebo
             f"{gz_chassis_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_caster_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_left_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
-            f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts"
+            f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
+            f"{gz_pose_topic}@geometry_msgs/msg/Pose[ignition.msgs.Pose",
         ],       
         # Contact Sensors: Remap for cleanliness
         remappings=[
             (gz_chassis_topic, '/chassis_sensor'),
             (gz_caster_topic, '/caster_sensor'),
             (gz_left_wheel_topic, '/left_wheel_sensor'),
-            (gz_right_wheel_topic, '/right_wheel_sensor')
+            (gz_right_wheel_topic, '/right_wheel_sensor'),
+            (gz_pose_topic, '/world_pose'),
         ],
         output='screen'
     )
