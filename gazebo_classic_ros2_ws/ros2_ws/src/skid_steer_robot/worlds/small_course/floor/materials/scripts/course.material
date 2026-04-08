@@ -1,0 +1,16 @@
+material CustomCourse/Diffuse
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        # Relative path to your image in the textures/ folder
+        texture curved-lanes.png
+        # Optional: Scale the texture (1.0 = fit once)
+        scale 1.0 1.0
+      }
+    }
+  }
+}
