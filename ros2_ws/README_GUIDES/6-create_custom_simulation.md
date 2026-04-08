@@ -1,17 +1,17 @@
-# Create Custom Simulations
+# <span style="color:LightGreen">Create Custom Simulations
 
 > **🚨 IMPORTANT:** I highly recommend that when you create a new simulation, you follow these steps VERY carefully. The directory structure and scripts to launch the simulations are precise and can be tedious. Even if you are proficient with Gazebo, you should still use the template workflow provided here.
 
 Creating a custom simulation for this framework is actually easy—it is done by customizing a copy of the template world. 
 
-### Unit Simulations
+### <span style="color:Goldenrod">Unit Simulations
 Think of these simulations as **unit tests**. They should place the robot in a novel circumstance and test if it can behave correctly. Do your best to keep the simulation small and simple. Browse through the `/worlds` directory and look at the different simulation previews for reference.
 
-### Large Simulations
+### <span style="color:Goldenrod">Large Simulations
 You have more freedom here. The design philosophy is yours, but you must keep the process.
 
 
-## 1. Copy the Simulation Template and Launch File
+## <span style="color:LightSkyBlue">1. Copy the Simulation Template and Launch File
 The template consists of a directory for the simulation and a launch script. Copy them both and rename them, replacing `template` with your simulation's name. Be descriptive about the contents of your world! 
 
 The template locations are shown below:
@@ -27,12 +27,12 @@ ros2_ws
                 └── template         # COPY THIS DIR
 ```
 
-## 2. Refactor the simulation name:
+## <span style="color:LightSkyBlue">2. Refactor the simulation name:
 There are two places in the copied template where you need to change the simulation name from template to your new name. This must exactly match the name of your new simulation folder and launch file.
 1. The name of the ```.world``` file
 2. The name IN the ```.world``` file (line 3)
 
-## 3. Draw The Course Floor Plane:
+## <span style="color:LightSkyBlue">3. Draw The Course Floor Plane:
 The textures folder in your new simulation has an image that will be cast onto the floor. Currently it is just blank asphault texture. The easiest and most professional way to design your course is to go to some drawing software (I like [photopea](https://www.photopea.com/)) and draw nice, smooth lines on the image. Once you have your course drawn up, save it back in the same location with the same name.
 ```yaml
 worlds
@@ -63,7 +63,7 @@ And change/color the grid based on course size. The template image is blank, squ
 The **brush tool** is the best for drawing curved lines by far, just increase the "smoothness" so the lines aren't jagged and ugly. Straight lines can be done easiest with the **shape tool**.
 
 
-## 4. Change The Size of Your World (optional):
+## <span style="color:LightSkyBlue">4. Change The Size of Your World (optional):
 In ```model.sdf```, you can change the dimensions of the ground plane. 
 ```yaml
 worlds
@@ -92,7 +92,7 @@ Then in the ```.world``` file there are a few lines at line 33 that look like th
 
 These define the entire ground plane: Your square course and 8 equally large, blank tiles surrounding it. This prevents the robot from thinking it's ever running towards a cliff. Just changes these values based on the size of your world.
 
-## 5. Build and Launch Your Simulation:
+## <span style="color:LightSkyBlue">5. Build and Launch Your Simulation:
 This is where it gets fun. Now you need to launch your simulation so you can visually position the obstacles, the robot, and the user camera.
 ```bash
 cd ~/ros2_ws
@@ -102,7 +102,7 @@ ros2 launch littleblue_sim unit_sim.launch.py world:=yourWorld world_building_mo
 ```
 If you've followed along, a basic simulation with your floor design should render.
 
-## 6. Placing Obstacles
+## <span style="color:LightSkyBlue">6. Placing Obstacles
 1. With the simulation open, go to the 3 dots in the top right corner. Search for **Resource Spawner**. 
 
     It should open a window on the left.
@@ -122,7 +122,7 @@ If you've followed along, a basic simulation with your floor design should rende
 
 5. Use these techniques to place all your obstacles.
 
-## 7. "Trace" The Lane Lines
+## <span style="color:LightSkyBlue">7. "Trace" The Lane Lines
 Some background:
 * This simulation framework detects if you've hit an object with collision sensors and then fails the robot.
 
@@ -163,7 +163,7 @@ Once you've done the tedious work of placing all your objects, now you save the 
 
 4. You should see the file in your world's folder
 
-## 8. Make It Permanant
+## <span style="color:LightSkyBlue">8. Make It Permanant
 1. If you open ```temp.sdf``` you should see a hideous wall of generated sdf code. Not very far down you should see your first ```<include>``` tag for the floor. Skip that.
 2. Copy all the rest of the objects after it.
 
@@ -198,16 +198,16 @@ Once you've done the tedious work of placing all your objects, now you save the 
 
 
 
-## 9. Position The Robot and GUI
+## <span style="color:LightSkyBlue">9. Position The Robot and GUI
 
-## 10. Place the Finish Line
+## <span style="color:LightSkyBlue">10. Place the Finish Line
 
 
-## 11. Take a Screenshot
+## <span style="color:LightSkyBlue">11. Take a Screenshot
 
 You (and others in the future) might want a sneak peek of your simulation without having to launch the whole thing. Take a screenshot of your course, crop it, and save it here:
 ```/worlds/unit_sims/your_new_world/thumbnail.png```
 
-## 12. Add It To The Master Script
+## <span style="color:LightSkyBlue">12. Add It To The Master Script
 
 ✅ You're done! That is all it takes! Tedious, sure, but easy!

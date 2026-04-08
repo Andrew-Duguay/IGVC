@@ -1,8 +1,8 @@
-# ROS 2 & Gazebo: The Essentials
+# <span style="color:LightGreen">**ROS 2 & Gazebo: The Essentials**</span>
 
 If you’re already a ROS veteran, feel free to skip to the project-specific docs. If you’re still figuring ROS, **read this first.**
 
-## 1. No Shortcuts: Do The Tutorials
+## <span style="color:LightSkyBlue">1. No Shortcuts: Do The Tutorials</span>
 Before you touch this codebase, you need a baseline. ROS 2 and Gazebo are powerful, but they aren't "guess-and-check" friendly.
 
 * **ROS 2 Beginner CLI Tools:** [Official Docs](https://docs.ros.org/en/rolling/Tutorials/Beginner-CLI-Tools.html)
@@ -10,7 +10,7 @@ Before you touch this codebase, you need a baseline. ROS 2 and Gazebo are powerf
 
 > **To Be Real:** Step 1 is the only step that matters. These tutorials are intuitive, but you actually have to **run the commands**. Take a day. Build the foundations. Future-you will thank you when you aren't debugging a simple pathing error for six hours.
 
-## 2. The Communication Gap (The Bridge)
+## <span style="color:LightSkyBlue">2. The Communication Gap (The Bridge)
 Gazebo and ROS 2 are actually two entirely different programs. They don't speak the same language by default. Gazebo handles the **physics** (gravity, collisions), while ROS handles the **brains**. 
 
 To make them work together, we use the **ros_gz_bridge**.
@@ -23,7 +23,7 @@ To make them work together, we use the **ros_gz_bridge**.
 
 
 
-## 3. Hardware vs. Simulation (Abstraction)
+## <span style="color:LightSkyBlue">3. Hardware vs. Simulation (Abstraction)
 One of the coolest parts of ROS is that your "Brain" nodes don't know (or care) if they are in a simulation or on a real sidewalk.
 
 | Component | In the Real World | In the Simulation |
@@ -34,7 +34,7 @@ One of the coolest parts of ROS is that your "Brain" nodes don't know (or care) 
 
 In simulation, we **omit** the physical driver nodes because Gazebo handles the "body." We only run the "mind."
 
-## 5. Running the System
+## <span style="color:LightSkyBlue">4. Running the System
 You can run them separately, but it's like a body without a brain (or vice versa):
 * **Gazebo alone:** The robot will sit there, gravity will work, but it will never move.
 * **ROS alone:** The nodes will spin and wait for data, but since there’s no "world," they will never receive a single pixel of information.

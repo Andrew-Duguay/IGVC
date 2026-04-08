@@ -1,4 +1,4 @@
-# Adding Your Code For Development
+# <span style="color:LightGreen">Adding Your Code For Development</span>
 
 This part is easy. See the directory ```/workbench```? Remember that? That's **yours**. You do what you want in there. The only requirement is that you don't remove ```/startup_robot```. That package is specially placed as the single entry point to your robot. 
 
@@ -16,18 +16,13 @@ ros2_ws
 
 Whatever ROS nodes and packages you want to develop, organize it however you want. The only requirements are the 3 golden rules I gave at the beginning. I'll remind you:
 
-## The Three Golden Rules
+# <span style="color:Gold">The Three Golden Rules</span>
 
-### 1. Always execute commands from the workspace root (```ros2_ws```)
+### <span style="color:Khaki">1. Always execute commands from the workspace root (```ros2_ws```)</span>
 
-### 2. Keep all your code in the ```/workbench``` directory
-* **Why**: It creates a strict, safe boundary between the core simulation physics/environments and your autonomous code.
+### <span style="color:Khaki">2. Keep all your code in the ```/workbench``` directory</span>
 
-* **Your Freedom**: Inside the workbench directory, you have total control. You can structure your custom ROS 2 packages, standalone scripts, and nodes however you see fit without worrying about breaking the simulator.
 
-### 3. Launch your robot using the startup_robot package (
-Remember the command: ```ros2 launch startup_robot robot.launch.py```
+### <span style="color:Khaki">3. Launch your robot using the startup_robot package</span>
 
-* **Why**: It abstracts all of your robots control logic into a single startup script, simplifying the simulation scripts
-
-* **Your Freedom**: The way you launch individual nodes/packages/systems is up to you. You have full control of the contents of startup_robot, the configs etc, just keep the file names.
+* You set up `robot.launch.py` to launch ALL of your robot's autonomy stack.
