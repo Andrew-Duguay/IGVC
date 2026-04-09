@@ -136,82 +136,14 @@ class DiagnosticLogger:
 
 
 # ─── Track centerline for goal waypoint system ───────────────────────
-# Precomputed world-frame centerline matching the AutoNav course geometry.
-# The robot tracks its progress along this line and sets a goal waypoint
-# ahead, providing directional memory through obstacle dodges.
+# Disabled: the precomputed AutoNav-course centerline doesn't match arbitrary
+# worlds (e.g. full_course). Returning an empty list makes the goal-pursuit,
+# preavoid bias, and centerline clamp code paths no-op so the planner relies
+# purely on sensor-detected lane boundaries and obstacles.
 
 def _build_track_centerline():
-    """Build track centerline as list of (x, y) at ~0.25m spacing.
-
-    Built counterclockwise then REVERSED to clockwise order,
-    matching the robot's actual travel direction (spawn heading north
-    on left straight, all right turns).
-
-    Clockwise order: BL corner → left straight (north) → TL corner →
-    top straight (east) → TR corner → right straight (south) →
-    BR corner → bottom straight (west) → BL corner.
-    """
-    pts = []
-    step = 0.25
-    R = 4.0
-    n_arc = 32
-
-    # Build counterclockwise first (same as fake_lanes_autonav.py)
-    # Bottom straight: y=0, x from -6 to 6
-    x = -6.0
-    while x <= 6.0:
-        pts.append((x, 0.0))
-        x += step
-
-    # Bottom-right corner: center (6, 4)
-    cx, cy = 6.0, 4.0
-    for i in range(n_arc + 1):
-        theta = -math.pi / 2 + (math.pi / 2) * i / n_arc
-        pts.append((cx + R * math.cos(theta), cy + R * math.sin(theta)))
-
-    # Right straight: x=10, y from 4 to 20
-    y = 4.0
-    while y <= 20.0:
-        pts.append((10.0, y))
-        y += step
-
-    # Top-right corner: center (6, 20)
-    cx, cy = 6.0, 20.0
-    for i in range(n_arc + 1):
-        theta = 0 + (math.pi / 2) * i / n_arc
-        pts.append((cx + R * math.cos(theta), cy + R * math.sin(theta)))
-
-    # Top straight: y=24 (with chicane), x from 6 to -6
-    x = 6.0
-    while x >= -6.0:
-        ch = 0.0
-        if -3.0 <= x <= 3.0:
-            t = (x - 3.0) / (-6.0)
-            ch = 1.1 * math.sin(t * 2 * math.pi)
-        pts.append((x, 24.0 - ch))
-        x -= step
-
-    # Top-left corner: center (-6, 20)
-    cx, cy = -6.0, 20.0
-    for i in range(n_arc + 1):
-        theta = math.pi / 2 + (math.pi / 2) * i / n_arc
-        pts.append((cx + R * math.cos(theta), cy + R * math.sin(theta)))
-
-    # Left straight: x=-10, y from 20 to 4
-    y = 20.0
-    while y >= 4.0:
-        pts.append((-10.0, y))
-        y -= step
-
-    # Bottom-left corner: center (-6, 4)
-    cx, cy = -6.0, 4.0
-    for i in range(n_arc + 1):
-        theta = math.pi + (math.pi / 2) * i / n_arc
-        pts.append((cx + R * math.cos(theta), cy + R * math.sin(theta)))
-
-    # Reverse to clockwise order
-    pts.reverse()
-    return pts
+    """Disabled — return empty list. See module note above."""
+    return []
 
 
 class LaneFollowerNode(Node):
@@ -1152,12 +1084,11 @@ class LaneFollowerNode(Node):
     def _clamp_to_lane(self, sx, sy, lane_boundaries, min_x, bin_w):
         """Clamp a point's Y to stay within lane boundaries for its bin.
 
-        Uses track centerline as fallback when no bin data is available,
-        so the path is ALWAYS constrained to the lane.
+        With the hardcoded track centerline disabled, the centerline fallback
+        is gone — when no bin data is available, the point is left unclamped.
         """
         if not lane_boundaries:
-            # Fallback: use track centerline ± half lane width
-            return self._clamp_to_centerline(sx, sy)
+            return sy
         bi = int((sx - min_x) / bin_w)
         # Check exact bin and neighbors
         for offset in (0, 1, -1, 2, -2, 3, -3):
@@ -1168,18 +1099,23 @@ class LaneFollowerNode(Node):
                     left_b, right_b = right_b, left_b
                 nav_margin = self._adaptive_nav_margin(left_b, right_b)
                 return max(right_b + nav_margin, min(left_b - nav_margin, sy))
-        # No bin data at all — use track centerline as fallback
-        return self._clamp_to_centerline(sx, sy)
+        # No bin data at all — leave unclamped (centerline fallback removed)
+        return sy
 
     def _clamp_to_centerline(self, bx, by):
-        """Clamp body-frame point to track centerline ± half lane width."""
+        """Clamp body-frame point to track centerline ± half lane width.
+
+        No-op when the track centerline is disabled (empty).
+        """
+        cl = self._track_centerline
+        if not cl:
+            return by
         # Project body-frame point to world frame
         cos_y = math.cos(self.world_yaw)
         sin_y = math.sin(self.world_yaw)
         wpx = self.world_x + bx * cos_y - by * sin_y
         wpy = self.world_y + bx * sin_y + by * cos_y
         # Find nearest centerline point
-        cl = self._track_centerline
         best_d2 = float('inf')
         best_ci = 0
         for ci in range(len(cl)):
@@ -1574,66 +1510,69 @@ class LaneFollowerNode(Node):
         # For obstacles ahead, use the TRACK CENTERLINE (which knows chicane
         # geometry) to determine which side of the lane the obstacle is on,
         # then bias the A* path to the opposite side.
+        # SKIPPED when track centerline is disabled (empty) — the planner
+        # falls back to pure A* through detected lane gaps.
         preavoid_bias_y = None  # target Y in body frame (None = no bias)
         preavoid_strength = 0.0
-        cos_y = math.cos(self.world_yaw)
-        sin_y = math.sin(self.world_yaw)
         cl = self._track_centerline
-        for owx, owy, er, _ in self._obstacle_world:
-            dx, dy = owx - self.world_x, owy - self.world_y
-            bx = dx * cos_y + dy * sin_y
-            by = -dx * sin_y + dy * cos_y
-            if bx < 3.0 or bx > 20.0:
-                continue
-            # Find obstacle's lateral offset from track centerline (world frame).
-            # This is robust to chicane because the centerline follows it.
-            best_d2 = float('inf')
-            best_ci = 0
-            for ci in range(len(cl)):
-                d2 = (owx - cl[ci][0]) ** 2 + (owy - cl[ci][1]) ** 2
-                if d2 < best_d2:
-                    best_d2 = d2
-                    best_ci = ci
-            # Compute lateral offset: positive = left of centerline direction
-            ci_next = (best_ci + 4) % len(cl)
-            tdx = cl[ci_next][0] - cl[best_ci][0]
-            tdy = cl[ci_next][1] - cl[best_ci][1]
-            tlen = math.sqrt(tdx * tdx + tdy * tdy)
-            if tlen < 0.01:
-                continue
-            # Cross product gives signed lateral offset
-            # Positive = obstacle is to the left of track direction
-            odx = owx - cl[best_ci][0]
-            ody = owy - cl[best_ci][1]
-            lateral = (tdx * ody - tdy * odx) / tlen
-            # Bias to the opposite side: if obstacle is left (+), bias right (-)
-            # For centered obstacles, bias toward the side the robot is already on
-            half_lane = self._p('lane_width') / 2.0
-            if abs(lateral) < 0.15:
-                # Obstacle is on centerline — bias toward robot's current side
-                # Use the robot's lateral offset from the obstacle to pick a side
-                if by > 0:
-                    lateral = -0.3  # robot is left of obstacle → treat as right-of-center → bias left
+        if cl:
+            cos_y = math.cos(self.world_yaw)
+            sin_y = math.sin(self.world_yaw)
+            for owx, owy, er, _ in self._obstacle_world:
+                dx, dy = owx - self.world_x, owy - self.world_y
+                bx = dx * cos_y + dy * sin_y
+                by = -dx * sin_y + dy * cos_y
+                if bx < 3.0 or bx > 20.0:
+                    continue
+                # Find obstacle's lateral offset from track centerline (world frame).
+                # This is robust to chicane because the centerline follows it.
+                best_d2 = float('inf')
+                best_ci = 0
+                for ci in range(len(cl)):
+                    d2 = (owx - cl[ci][0]) ** 2 + (owy - cl[ci][1]) ** 2
+                    if d2 < best_d2:
+                        best_d2 = d2
+                        best_ci = ci
+                # Compute lateral offset: positive = left of centerline direction
+                ci_next = (best_ci + 4) % len(cl)
+                tdx = cl[ci_next][0] - cl[best_ci][0]
+                tdy = cl[ci_next][1] - cl[best_ci][1]
+                tlen = math.sqrt(tdx * tdx + tdy * tdy)
+                if tlen < 0.01:
+                    continue
+                # Cross product gives signed lateral offset
+                # Positive = obstacle is to the left of track direction
+                odx = owx - cl[best_ci][0]
+                ody = owy - cl[best_ci][1]
+                lateral = (tdx * ody - tdy * odx) / tlen
+                # Bias to the opposite side: if obstacle is left (+), bias right (-)
+                # For centered obstacles, bias toward the side the robot is already on
+                half_lane = self._p('lane_width') / 2.0
+                if abs(lateral) < 0.15:
+                    # Obstacle is on centerline — bias toward robot's current side
+                    # Use the robot's lateral offset from the obstacle to pick a side
+                    if by > 0:
+                        lateral = -0.3  # robot is left of obstacle → treat as right-of-center → bias left
+                    else:
+                        lateral = 0.3   # robot is right of obstacle → treat as left-of-center → bias right
+                # World-frame bias direction: perpendicular to track, away from obstacle
+                nx, ny = -tdy / tlen, tdx / tlen  # left-pointing normal
+                if lateral > 0:
+                    # Obstacle is left of center → bias right
+                    bias_wx = cl[best_ci][0] - nx * (half_lane * 0.4)
+                    bias_wy = cl[best_ci][1] - ny * (half_lane * 0.4)
                 else:
-                    lateral = 0.3   # robot is right of obstacle → treat as left-of-center → bias right
-            # World-frame bias direction: perpendicular to track, away from obstacle
-            nx, ny = -tdy / tlen, tdx / tlen  # left-pointing normal
-            if lateral > 0:
-                # Obstacle is left of center → bias right
-                bias_wx = cl[best_ci][0] - nx * (half_lane * 0.4)
-                bias_wy = cl[best_ci][1] - ny * (half_lane * 0.4)
-            else:
-                # Obstacle is right of center → bias left
-                bias_wx = cl[best_ci][0] + nx * (half_lane * 0.4)
-                bias_wy = cl[best_ci][1] + ny * (half_lane * 0.4)
-            # Project bias point to body frame
-            bdx, bdy = bias_wx - self.world_x, bias_wy - self.world_y
-            bias_by = -bdx * sin_y + bdy * cos_y
-            # Strength ramps up as obstacle gets closer
-            strength = min(3.0, 8.0 / max(bx, 1.0))
-            if strength > preavoid_strength:
-                preavoid_bias_y = bias_by
-                preavoid_strength = strength
+                    # Obstacle is right of center → bias left
+                    bias_wx = cl[best_ci][0] + nx * (half_lane * 0.4)
+                    bias_wy = cl[best_ci][1] + ny * (half_lane * 0.4)
+                # Project bias point to body frame
+                bdx, bdy = bias_wx - self.world_x, bias_wy - self.world_y
+                bias_by = -bdx * sin_y + bdy * cos_y
+                # Strength ramps up as obstacle gets closer
+                strength = min(3.0, 8.0 / max(bx, 1.0))
+                if strength > preavoid_strength:
+                    preavoid_bias_y = bias_by
+                    preavoid_strength = strength
 
         # Curve scale per layer (for segment_clear calls)
         layer_curve_scales = [lane_angle_scale.get(bi, 1.0) for bi in layer_indices]

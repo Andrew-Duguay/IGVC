@@ -2,6 +2,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -12,6 +13,11 @@ def generate_launch_description():
     approach_arg = DeclareLaunchArgument(
         'approach', default_value='A',
         description='Autonomy approach mode'
+    )
+
+    rviz_arg = DeclareLaunchArgument(
+        'rviz', default_value='true',
+        description='Launch RViz with the autonomy config'
     )
 
     # ── Mark's Autonomy Stack ──
@@ -28,14 +34,9 @@ def generate_launch_description():
         output='screen',
     )
 
-    # Safety monitor (collision/boundary detection, diagnostics)
-    safety_monitor = Node(
-        package='littleblue_autonomy',
-        executable='safety_monitor_node',
-        name='safety_monitor_node',
-        parameters=[{'use_sim_time': True}],
-        output='screen',
-    )
+    # Safety monitor REMOVED from launch — its centerline, OBSTACLES list, lap
+    # detection, and segment naming are all hardcoded for the AutoNav course
+    # geometry. Re-enable only when running that specific world.
 
     # cmd_vel to Joy bridge (for Pi motor controller)
     cmd_vel_to_joy = Node(
@@ -52,6 +53,8 @@ def generate_launch_description():
     )
 
     # Left camera lane detector
+    # HSV thresholds loosened from source defaults (hsv_low_v=230, hsv_high_s=25)
+    # to catch dimmer/slightly-tinted lane lines in full_course.
     left_lane_detector = Node(
         package='littleblue_vision',
         executable='lane_candidate_node',
@@ -62,6 +65,8 @@ def generate_launch_description():
             'image_topic': '/left_camera/image_raw',
             'output_topic': '/candidate/left_lane_points',
             'debug_topic': '/candidate/left_debug',
+            'hsv_low_v': 180,
+            'hsv_high_s': 60,
             'camera_lateral_offset': 0.28,
             'camera_forward_offset': 0.38,
             'camera_pitch': 0.09,
@@ -83,6 +88,8 @@ def generate_launch_description():
             'image_topic': '/right_camera/image_raw',
             'output_topic': '/candidate/right_lane_points',
             'debug_topic': '/candidate/right_debug',
+            'hsv_low_v': 180,
+            'hsv_high_s': 60,
             'camera_lateral_offset': -0.28,
             'camera_forward_offset': 0.38,
             'camera_pitch': 0.09,
@@ -123,6 +130,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    # ── RViz with autonomy config ──
+    rviz_config = os.path.join(autonomy_pkg, 'config', 'autonomy_rviz.rviz')
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config],
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('rviz')),
+    )
+
     # ── Other team subsystems (uncomment as ready) ──
 
     # Vision:
@@ -146,14 +165,15 @@ def generate_launch_description():
     # Launch everything
     return LaunchDescription([
         approach_arg,
+        rviz_arg,
         # Mark's autonomy stack
         lane_follower,
-        safety_monitor,
         cmd_vel_to_joy,
         left_lane_detector,
         right_lane_detector,
         lane_accumulator,
         lidar_obstacle,
+        rviz_node,
         # Other subsystems
         #vision_launch,
         #gps_launch,

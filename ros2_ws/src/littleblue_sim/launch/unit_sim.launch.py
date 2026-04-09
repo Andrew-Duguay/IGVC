@@ -152,7 +152,7 @@ def launch_setup(context, *args, **kwargs):
             f"{gz_caster_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_left_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
-            f"{gz_pose_topic}@geometry_msgs/msg/Pose[ignition.msgs.Pose",
+            f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose",
         ],       
         # Contact Sensors: Remap for cleanliness
         remappings=[

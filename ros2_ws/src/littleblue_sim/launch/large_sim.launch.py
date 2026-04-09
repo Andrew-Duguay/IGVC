@@ -64,13 +64,15 @@ def launch_setup(context, *args, **kwargs):
         print(f"\n[WARNING] Invalid speed '{speed_str}'. Defaulting to 1000 Hz.\n")
         target_hz = 1000
 
-    gz_arguments = f"{world_path} -r " + f"{gui_arg}" + f"-z {target_hz}"           
+    # --render-engine ogre forces Ogre1 instead of Ogre2 — required on WSL2
+    # where Ogre2's GPU camera path renders at ~2 Hz (or 0 Hz for one of two
+    # cameras). Ogre1 uses an older GL path that's stable in WSL2.
+    gz_arguments = f"{world_path} -r --render-engine ogre " + f"{gui_arg}" + f"-z {target_hz}"
     launch_gazebo_action = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
             ),
             launch_arguments={
-                # Pass the world file and the '-r' flag to run immediately--render-engine ogre
                 'gz_args': gz_arguments
             }.items()
         )
@@ -137,14 +139,14 @@ def launch_setup(context, *args, **kwargs):
             '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist',
             '/odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
             '/joint_states@sensor_msgs/msg/JointState[ignition.msgs.Model',
-            # Cameras
-            '/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
-            '/depth/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
+            # Cameras (URDF declares left + right RGB only — no depth camera)
+            '/left_camera/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
+            '/right_camera/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
             # Environment Sensors
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-            f"{gz_pose_topic}@geometry_msgs/msg/Pose[ignition.msgs.Pose"
+            f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose"
         ],
         remappings=[
             (gz_pose_topic, '/world_pose'),
