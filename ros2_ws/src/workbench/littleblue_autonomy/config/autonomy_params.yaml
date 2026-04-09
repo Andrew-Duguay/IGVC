@@ -50,7 +50,7 @@ lane_follower_node:
     path_smooth_passes: 3
     obstacle_stale_time: 15.0
     # World-frame persistence
-    lane_persist_time: 2.0        # seconds to keep lane points (short to avoid curve noise)
+    lane_persist_time: 5.0        # seconds to keep lane points (longer for slow cameras; ~10 frames at 2 Hz)
     obstacle_persist_time: 30.0   # seconds to keep obstacles in world frame
     persist_max_behind: 3.0       # max meters behind robot to retain
     # Track goal / heading recovery

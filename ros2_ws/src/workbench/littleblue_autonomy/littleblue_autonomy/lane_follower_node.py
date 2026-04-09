@@ -275,8 +275,12 @@ class LaneFollowerNode(Node):
         # Side commitment state (Approach B)
         self._obstacle_side_lock = {}
 
-        # Track centerline goal waypoint system
-        self._track_centerline = _build_track_centerline()
+        # Track centerline — built incrementally as the robot drives by
+        # accumulating world-frame midpoints from detected lane boundaries.
+        # Open polyline (not a closed loop), grows from spawn forward.
+        self._track_centerline = _build_track_centerline()  # stub returns []
+        self._track_centerline_grid = set()                  # O(1) dedup keys
+        self._track_centerline_grid_res = 0.20               # 20cm dedup cells
         self._track_idx = 0
         self._track_dist = 0.0
         self._goal_wx = 0.0
@@ -346,9 +350,25 @@ class LaneFollowerNode(Node):
         self.last_lane_time = self.get_clock().now()
         self.real_lane_count = len(pts)
 
-        # Use lane points directly from callback (no world-frame accumulation —
-        # persistence causes regression at curves per testing notes)
+        # Always populate body-frame lane_points so the control loop's wait
+        # check (which runs before _project_to_body) sees data on the first
+        # callback. _project_to_body() will overwrite this with the merged
+        # world-frame buffer projected to body each cycle.
         self.lane_points = pts
+
+        if not self._world_pose_valid:
+            return
+
+        # Accumulate in world frame for persistence across slow camera frames.
+        cos_y = math.cos(self.world_yaw)
+        sin_y = math.sin(self.world_yaw)
+        wx0, wy0 = self.world_x, self.world_y
+        now_sec = self._now_sec()
+        grid_res = self._lane_grid_res
+        for bx, by in pts:
+            wx = wx0 + bx * cos_y - by * sin_y
+            wy = wy0 + bx * sin_y + by * cos_y
+            self._lane_world[(int(wx / grid_res), int(wy / grid_res))] = (wx, wy, now_sec)
 
     def _obstacle_cb(self, msg):
         raw_pts = []
@@ -677,7 +697,22 @@ class LaneFollowerNode(Node):
         wx, wy = self.world_x, self.world_y
         max_behind = self._p('persist_max_behind')
 
-        # Lane points come directly from _lane_cb (no world-frame persistence)
+        # ── Lanes ──
+        # Project the persistent world-frame lane cloud back to body frame.
+        # NOTE: TTL pruning + behind-robot pruning are intentionally disabled.
+        # Lane points accumulate for the lifetime of the run and are only
+        # deduplicated by the 20cm grid in _lane_cb. The dict size is bounded
+        # by the area covered (~62k entries for a 50x50m course).
+        # The `lane_persist_time` parameter and `persist_max_behind` are still
+        # declared but unused for lanes here — they still apply to obstacles.
+        body_lanes = []
+        for lwx, lwy, _ in self._lane_world.values():
+            dx, dy = lwx - wx, lwy - wy
+            bx = dx * cos_y + dy * sin_y
+            if bx > 0:  # only points ahead of robot feed the planner
+                by = -dx * sin_y + dy * cos_y
+                body_lanes.append((bx, by))
+        self.lane_points = body_lanes
 
         # ── Obstacles ──
         obs_ttl = self._p('obstacle_persist_time')
@@ -701,6 +736,37 @@ class LaneFollowerNode(Node):
         self.obstacle_points_viz = body_obs_viz
 
 
+    # ─── track centerline accumulation ───────────────────────────────
+    def _accumulate_centerline(self, lane_boundaries, min_x, bin_w):
+        """Append midpoints from current lane boundaries to the track centerline.
+
+        Each control cycle, takes the per-bin (left, right) lane boundaries from
+        _extract_lane_boundaries(), computes their midpoint in body frame,
+        projects to world frame, and appends to self._track_centerline if not
+        already represented in the dedup grid. Builds an open polyline
+        incrementally as the robot drives forward.
+        """
+        if not lane_boundaries:
+            return
+        cos_y = math.cos(self.world_yaw)
+        sin_y = math.sin(self.world_yaw)
+        wx0, wy0 = self.world_x, self.world_y
+        grid_res = self._track_centerline_grid_res
+
+        # Sort by bin index so points are appended in forward-X order. The
+        # polyline order matters for goal-walking and `(idx + N)` lookups.
+        for bi in sorted(lane_boundaries.keys()):
+            left_b, right_b = lane_boundaries[bi]
+            mid_y_body = (left_b + right_b) / 2.0
+            x_body = min_x + (bi + 0.5) * bin_w
+            # Body → world
+            wx = wx0 + x_body * cos_y - mid_y_body * sin_y
+            wy = wy0 + x_body * sin_y + mid_y_body * cos_y
+            grid_key = (int(wx / grid_res), int(wy / grid_res))
+            if grid_key not in self._track_centerline_grid:
+                self._track_centerline_grid.add(grid_key)
+                self._track_centerline.append((wx, wy))
+
     # ─── track goal waypoint system ──────────────────────────────────
     def _update_track_goal(self):
         """Find closest centerline point, set goal ahead, compute track heading."""
@@ -710,13 +776,14 @@ class LaneFollowerNode(Node):
         wx, wy = self.world_x, self.world_y
         n = len(cl)
 
-        # Find closest centerline point (search near previous index first)
+        # Find closest centerline point (search near previous index first).
+        # Open polyline: clamp the search window instead of wrapping.
         best_d2 = float('inf')
         best_idx = self._track_idx
-        # Search ±50 points around last known position, plus full scan fallback
         search_range = 50
-        for offset in range(-search_range, search_range + 1):
-            i = (self._track_idx + offset) % n
+        lo = max(0, self._track_idx - search_range)
+        hi = min(n, self._track_idx + search_range + 1)
+        for i in range(lo, hi):
             d2 = (wx - cl[i][0]) ** 2 + (wy - cl[i][1]) ** 2
             if d2 < best_d2:
                 best_d2 = d2
@@ -733,17 +800,23 @@ class LaneFollowerNode(Node):
 
         # Track heading: use ~2m baseline for stability at arc/straight transitions
         lookahead_pts = 8  # 8 * 0.25m = 2m baseline
-        i_ahead = (best_idx + lookahead_pts) % n
+        # Open polyline — clamp at end instead of wrapping
+        i_ahead = min(best_idx + lookahead_pts, n - 1)
+        if i_ahead == best_idx and best_idx > 0:
+            i_ahead = max(best_idx - lookahead_pts, 0)
         dx = cl[i_ahead][0] - cl[best_idx][0]
         dy = cl[i_ahead][1] - cl[best_idx][1]
+        # Sign-flip if we had to walk backward to get a tangent
+        if i_ahead < best_idx:
+            dx, dy = -dx, -dy
         self._track_heading = math.atan2(dy, dx)
 
-        # Walk forward along centerline to find goal
+        # Walk forward along centerline to find goal — stop at end (no wrap)
         goal_dist = self._p('goal_ahead_distance')
         cum = 0.0
         gi = best_idx
-        while cum < goal_dist:
-            gi_next = (gi + 1) % n
+        while cum < goal_dist and gi < n - 1:
+            gi_next = gi + 1
             sdx = cl[gi_next][0] - cl[gi][0]
             sdy = cl[gi_next][1] - cl[gi][1]
             seg_len = math.sqrt(sdx * sdx + sdy * sdy)
@@ -1022,20 +1095,31 @@ class LaneFollowerNode(Node):
             idx = min(int((wx - min_x) / bin_w), n_bins - 1)
             wall_bins[idx].append(wy)
 
-        # Sort wall points per bin — the two lines appear as two Y values
+        # Per bin: distinguish "two distinct lines" from "many points on one
+        # line." When _reconstruct_lane_walls fits a single RANSAC line, it
+        # generates dense wall points along that one line, so a bin can have
+        # several Y values that are all clustered together (≈ same line_y).
+        # If we naively treated that as "two lines", the synthesized boundary
+        # would be degenerate (left ≈ right) and the bin would be skipped as
+        # "lane too narrow", which collapses single-lane behavior entirely.
+        # Use a Y-spread threshold to disambiguate: real lanes are ~3m apart,
+        # same-line clutter is well under 0.5m.
+        SINGLE_LINE_SPREAD_THRESH = 0.5
         lane_boundaries = {}
         for i in range(n_bins):
             ys = sorted(wall_bins[i])
-            if len(ys) >= 2:
+            if len(ys) >= 2 and (ys[-1] - ys[0]) > SINGLE_LINE_SPREAD_THRESH:
+                # Two distinct lines present in this bin
                 lane_boundaries[i] = (ys[-1], ys[0])
-            elif len(ys) == 1:
-                # Single line visible
-                line_y = ys[0]
-                mid_x = min_x + (i + 0.5) * bin_w
-                # Check which side robot is on (robot at body Y=0)
+            elif ys:
+                # Single line (or multiple same-line points) — synthesize
+                # phantom boundary at lane_w distance on the opposite side.
+                line_y = (ys[0] + ys[-1]) / 2.0  # average for stability
                 if line_y > 0:
+                    # Visible line is to the left of robot — phantom on the right
                     lane_boundaries[i] = (line_y, line_y - lane_w)
                 else:
+                    # Visible line is to the right of robot — phantom on the left
                     lane_boundaries[i] = (line_y + lane_w, line_y)
 
         # Fill gaps
@@ -1105,10 +1189,10 @@ class LaneFollowerNode(Node):
     def _clamp_to_centerline(self, bx, by):
         """Clamp body-frame point to track centerline ± half lane width.
 
-        No-op when the track centerline is disabled (empty).
+        No-op when the centerline is empty or too short to compute a tangent.
         """
         cl = self._track_centerline
-        if not cl:
+        if len(cl) < 5:
             return by
         # Project body-frame point to world frame
         cos_y = math.cos(self.world_yaw)
@@ -1123,8 +1207,12 @@ class LaneFollowerNode(Node):
             if d2 < best_d2:
                 best_d2 = d2
                 best_ci = ci
-        # Compute lateral offset from centerline
-        ci_next = (best_ci + 4) % len(cl)
+        # Compute local tangent — clamp to end (open polyline, no wrap)
+        ci_next = min(best_ci + 4, len(cl) - 1)
+        if ci_next == best_ci:
+            ci_next = max(best_ci - 4, 0)
+            if ci_next == best_ci:
+                return by
         tdx = cl[ci_next][0] - cl[best_ci][0]
         tdy = cl[ci_next][1] - cl[best_ci][1]
         tlen = math.sqrt(tdx * tdx + tdy * tdy)
@@ -1312,6 +1400,10 @@ class LaneFollowerNode(Node):
         min_x = self._p('min_x')
         max_x = self._p('max_x')
         bin_w = self._p('bin_width')
+
+        # Grow the world-frame centerline polyline from this frame's lanes.
+        # Replaces the old hardcoded AutoNav-course centerline.
+        self._accumulate_centerline(lane_boundaries, min_x, bin_w)
         min_gap = self._p('min_gap_width')
         center_w = self._p('center_weight')
         hyst_w = self._p('path_hysteresis')
@@ -1533,8 +1625,12 @@ class LaneFollowerNode(Node):
                     if d2 < best_d2:
                         best_d2 = d2
                         best_ci = ci
-                # Compute lateral offset: positive = left of centerline direction
-                ci_next = (best_ci + 4) % len(cl)
+                # Compute local tangent — open polyline, clamp to end
+                ci_next = min(best_ci + 4, len(cl) - 1)
+                if ci_next == best_ci:
+                    ci_next = max(best_ci - 4, 0)
+                    if ci_next == best_ci:
+                        continue
                 tdx = cl[ci_next][0] - cl[best_ci][0]
                 tdy = cl[ci_next][1] - cl[best_ci][1]
                 tlen = math.sqrt(tdx * tdx + tdy * tdy)

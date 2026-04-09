@@ -55,6 +55,7 @@ def generate_launch_description():
     # Left camera lane detector
     # HSV thresholds loosened from source defaults (hsv_low_v=230, hsv_high_s=25)
     # to catch dimmer/slightly-tinted lane lines in full_course.
+    # Camera mounting (raised, tilted down, angled outward) mirrors sensors.xacro.
     left_lane_detector = Node(
         package='littleblue_vision',
         executable='lane_candidate_node',
@@ -67,10 +68,11 @@ def generate_launch_description():
             'debug_topic': '/candidate/left_debug',
             'hsv_low_v': 180,
             'hsv_high_s': 60,
+            'camera_height': 0.32,
             'camera_lateral_offset': 0.28,
             'camera_forward_offset': 0.38,
-            'camera_pitch': 0.09,
-            'camera_yaw': 0.26,
+            'camera_pitch': 0.13,
+            'camera_yaw': 0.32,
             'frame_skip': 2,
             'subsample_stride': 8,
         }],
@@ -90,10 +92,11 @@ def generate_launch_description():
             'debug_topic': '/candidate/right_debug',
             'hsv_low_v': 180,
             'hsv_high_s': 60,
+            'camera_height': 0.32,
             'camera_lateral_offset': -0.28,
             'camera_forward_offset': 0.38,
-            'camera_pitch': 0.09,
-            'camera_yaw': -0.26,
+            'camera_pitch': 0.13,
+            'camera_yaw': -0.32,
             'frame_skip': 2,
             'subsample_stride': 8,
         }],

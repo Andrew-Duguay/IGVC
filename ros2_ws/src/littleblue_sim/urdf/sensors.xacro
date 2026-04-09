@@ -25,8 +25,10 @@
     <joint name="${prefix}_camera_joint" type="fixed">
       <parent link="base_link"/>
       <child link="${prefix}_camera_link"/>
-      <!-- Tilted down 5° (pitch=0.09) and outward 15° (yaw=±0.26) toward lane lines -->
-      <origin xyz="${chassis_length/2 - 0.02} ${y_offset} ${chassis_height + 0.02}" rpy="0 0.09 ${0.26 * y_offset/0.28}"/>
+      <!-- Raised 5cm, tilted down ~7.4° (pitch=0.13) and outward ~18.3° (yaw=±0.32) toward lane lines.
+           Camera abs height above ground = wheel_radius + chassis_height + 0.07 = 0.32m.
+           Lane projection params in startup_robot/launch/robot.launch.py must mirror these. -->
+      <origin xyz="${chassis_length/2 - 0.02} ${y_offset} ${chassis_height + 0.07}" rpy="0 0.13 ${0.32 * y_offset/0.28}"/>
     </joint>
 
     <link name="${prefix}_camera_optical_link"/>
