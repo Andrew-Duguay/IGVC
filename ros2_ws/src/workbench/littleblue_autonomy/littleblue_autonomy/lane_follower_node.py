@@ -240,6 +240,13 @@ class LaneFollowerNode(Node):
         self._prev_angular = 0.0
         self._prev_path = None
         self._lane_wall_obstacles = []
+        # Last-known-good extracted boundaries, used as fallback when a
+        # cycle's detection produces nothing (barrels occluding view, etc.)
+        # outside of No-Man's-Land mode. Pair with age so stale data doesn't
+        # linger forever.
+        self._last_lane_boundaries = None
+        self._last_lane_boundaries_time = None
+        self._started = False
 
         # Odom state for obstacle tracking
         self.odom_x = 0.0
@@ -1086,6 +1093,14 @@ class LaneFollowerNode(Node):
         self._lane_wall_obstacles = self._reconstruct_lane_walls()
 
         if not self._lane_wall_obstacles:
+            # Fallback outside NML: assume the goal is straight ahead and
+            # the lanes are obstructed. Use the last known good boundaries
+            # if recent, otherwise synthesize a default corridor of width
+            # lane_width centred on the robot's heading.
+            if not self.in_nml:
+                fallback = self._fallback_lane_boundaries(n_bins, min_x, bin_w, lane_w)
+                if fallback:
+                    return fallback, n_bins
             return {}, n_bins
 
         # Group wall points by X-bin to extract boundaries
@@ -1132,7 +1147,27 @@ class LaneFollowerNode(Node):
                         lane_boundaries[i] = lane_boundaries[ni]
                         break
 
+        # Cache the successful extraction for use as a fallback next time
+        # detections go dark outside NML.
+        self._last_lane_boundaries = dict(lane_boundaries)
+        self._last_lane_boundaries_time = self._now_sec()
         return lane_boundaries, n_bins
+
+    def _fallback_lane_boundaries(self, n_bins, min_x, bin_w, lane_w):
+        """Synthesize boundaries when live detection is empty (outside NML).
+
+        Prefer the most recent extraction if it's fresh (< fallback_max_age
+        seconds); otherwise lay down a straight corridor centred on the
+        robot's current heading with the configured lane_width.
+        """
+        max_age = 3.0
+        if (self._last_lane_boundaries
+                and self._last_lane_boundaries_time is not None
+                and (self._now_sec() - self._last_lane_boundaries_time) <= max_age):
+            return dict(self._last_lane_boundaries)
+
+        half = lane_w / 2.0
+        return {i: (half, -half) for i in range(n_bins)}
 
     # ─── edge collision check ────────────────────────────────────────
     def _segment_clear(self, x1, y1, x2, y2, obstacles, curve_scale=1.0):
@@ -1405,6 +1440,7 @@ class LaneFollowerNode(Node):
         # Grow the world-frame centerline polyline from this frame's lanes.
         # Replaces the old hardcoded AutoNav-course centerline.
         self._accumulate_centerline(lane_boundaries, min_x, bin_w)
+
         min_gap = self._p('min_gap_width')
         center_w = self._p('center_weight')
         hyst_w = self._p('path_hysteresis')
@@ -1412,7 +1448,17 @@ class LaneFollowerNode(Node):
             hyst_w *= 5.0  # Strong path commitment in NML to prevent oscillation
         n_waypoints = self._p('waypoints_per_gap')
 
+        # Lane walls are a hard constraint. Build them directly from the
+        # accumulated lane cells (projected to body frame) instead of the
+        # RANSAC-fitted line segments — the fit only covers the dense
+        # middle of the cluster, so curved or sparsely-sampled lanes left
+        # gaps the A* threaded through. Using the cells themselves makes
+        # the wall follow the actual curvature.
         obstacles = list(self.obstacle_points)
+        cell_r = 0.05
+        lane_walls = [(x, y, cell_r)
+                      for (x, y) in (self.lane_points or [])
+                      if min_x <= x <= max_x + 0.5]
 
         # Build previous path lookup by bin index for hysteresis
         prev_y_by_bin = {}
@@ -1697,9 +1743,10 @@ class LaneFollowerNode(Node):
 
         # Start → first layer
         cs0 = layer_curve_scales[0] if layer_curve_scales else 1.0
+        all_obs_0 = obstacles + lane_walls
         for to_id in layer_nids[0]:
             tx, ty = nodes[to_id]
-            if self._segment_clear(0.0, 0.0, tx, ty, obstacles, cs0):
+            if self._segment_clear(0.0, 0.0, tx, ty, all_obs_0, cs0):
                 dist = math.sqrt(tx * tx + ty * ty)
                 center_pen = center_w * abs(ty - node_centers[to_id])
                 hyst_pen = 0.0
@@ -1711,20 +1758,28 @@ class LaneFollowerNode(Node):
                 adj[0].append((to_id, dist + center_pen + hyst_pen + side_pen + pa_pen))
 
         if not adj[0]:
+            # Fallback: every main-loop segment was blocked. Add penalty
+            # edges so A* has something to work with. Crossing a lane wall
+            # incurs a much larger penalty than crossing a soft obstacle,
+            # so the planner strongly prefers staying in-lane but won't
+            # deadlock if the corridor is briefly impossible.
             for to_id in layer_nids[0]:
                 tx, ty = nodes[to_id]
                 dist = math.sqrt(tx * tx + ty * ty)
-                adj[0].append((to_id, dist + 5.0))
+                wall_pen = 0.0 if not lane_walls or self._segment_clear(
+                    0.0, 0.0, tx, ty, lane_walls, cs0) else 50.0
+                adj[0].append((to_id, dist + 5.0 + wall_pen))
 
         # Layer i → layer i+1
         for li in range(len(layers) - 1):
             # Use max curve scale of the two layers for segment check
             cs = max(layer_curve_scales[li], layer_curve_scales[li + 1])
+            all_obs = obstacles + lane_walls
             for from_id in layer_nids[li]:
                 fx, fy = nodes[from_id]
                 for to_id in layer_nids[li + 1]:
                     tx, ty = nodes[to_id]
-                    if self._segment_clear(fx, fy, tx, ty, obstacles, cs):
+                    if self._segment_clear(fx, fy, tx, ty, all_obs, cs):
                         dist = math.sqrt((tx - fx) ** 2 + (ty - fy) ** 2)
                         center_pen = center_w * abs(ty - node_centers[to_id])
                         hyst_pen = 0.0
@@ -1737,16 +1792,27 @@ class LaneFollowerNode(Node):
 
             for from_id in layer_nids[li]:
                 if not adj[from_id]:
+                    # Fallback: same as above — wall-crossing allowed but
+                    # heavily penalised so it is only picked when literally
+                    # no other option exists.
                     fx, fy = nodes[from_id]
                     for to_id in layer_nids[li + 1]:
                         tx, ty = nodes[to_id]
                         dist = math.sqrt((tx - fx) ** 2 + (ty - fy) ** 2)
-                        adj[from_id].append((to_id, dist + 5.0))
+                        wall_pen = 0.0 if not lane_walls or self._segment_clear(
+                            fx, fy, tx, ty, lane_walls, cs) else 50.0
+                        adj[from_id].append((to_id, dist + 5.0 + wall_pen))
 
         # ── A* search ──
+        # Track the deepest-in-X node reached so the partial-path fallback
+        # below can return a forward-heading path when the goal layer is
+        # unreachable, instead of returning None and stopping.
         open_set = [(0.0, 0.0, 0, -1)]
         g_scores = {0: 0.0}
         came_from = {}
+        best_reach_x = 0.0
+        best_reach_node = 0
+        best_reach_g = 0.0
 
         while open_set:
             f, g, current, parent = heapq.heappop(open_set)
@@ -1754,6 +1820,13 @@ class LaneFollowerNode(Node):
             if current in came_from:
                 continue
             came_from[current] = parent
+
+            cx = nodes[current][0] if current != 0 else 0.0
+            if cx > best_reach_x + 1e-6 or (
+                    abs(cx - best_reach_x) < 1e-6 and g < best_reach_g):
+                best_reach_x = cx
+                best_reach_node = current
+                best_reach_g = g
 
             if current in goal_ids:
                 path = []
@@ -1763,8 +1836,11 @@ class LaneFollowerNode(Node):
                     n = came_from[n]
                 path.reverse()
 
-                # ARCH FIX: smooth the A* path while respecting obstacle + lane bounds
-                path = self._smooth_path(path, obstacles, lane_boundaries, min_x, bin_w)
+                # ARCH FIX: smooth the A* path while respecting obstacle +
+                # lane wall clearance (lane walls passed as hard obstacles
+                # so the averaging step can't drift the path across them).
+                path = self._smooth_path(path, obstacles + lane_walls,
+                                         lane_boundaries, min_x, bin_w)
 
                 self._prev_path = path
                 self._update_side_locks(path, obstacles)
@@ -1777,6 +1853,22 @@ class LaneFollowerNode(Node):
                     nx, ny = nodes[neighbor]
                     h = abs(goal_x - nx)
                     heapq.heappush(open_set, (new_g + h, new_g, neighbor, current))
+
+        # Goal layer unreachable. Return the partial path to the deepest
+        # (largest-X) node we did reach so the robot keeps moving forward
+        # through the obstacle field instead of stopping at the edge.
+        if best_reach_node != 0 and best_reach_x > min_x:
+            path = []
+            n = best_reach_node
+            while n != -1:
+                path.append(nodes[n])
+                n = came_from[n]
+            path.reverse()
+            path = self._smooth_path(path, obstacles + lane_walls,
+                                     lane_boundaries, min_x, bin_w)
+            self._prev_path = path
+            self._update_side_locks(path, obstacles)
+            return path
 
         return None
 
@@ -2105,11 +2197,16 @@ class LaneFollowerNode(Node):
             return
         lane_age = (self.get_clock().now() - self.last_lane_time).nanoseconds / 1e9
         n_lane = len(self.lane_points) if self.lane_points else 0
-        if n_lane < 100 and lane_age < 5.0:
+        # Startup gate: before the first successful cycle (and always while
+        # in NML) we require solid lane data before moving. Once driving on
+        # the main course, the planner's fallback boundaries cover occluded
+        # frames, so don't re-trip on momentary detection drops.
+        if (not self._started or self.in_nml) and n_lane < 100 and lane_age < 5.0:
             if self._log_counter % 20 == 0:
                 self.get_logger().info('Waiting for lane data (n=%d, age=%.1fs)...' % (n_lane, lane_age))
             self._stop_robot()
             return
+        self._started = True
 
         # Startup debug: log first 5 cycles
         if self._log_counter <= 5:
@@ -2279,11 +2376,13 @@ class LaneFollowerNode(Node):
             return
 
         # ── Normal lane following with A* ──
-        # Replan throttle: only replan every N cycles to prevent A* oscillation.
-        # Between replans, reuse the previous path. Force replan if no valid path.
+        # Replan throttle: run A* every N control cycles to reduce CPU
+        # load and smooth plan transitions. Between replans, reuse the
+        # previous path (stale by at most N/control_rate seconds — short
+        # enough that the body-frame offset is negligible). Force a
+        # replan if the previous path is missing or too short.
         self._replan_counter = getattr(self, '_replan_counter', 0) + 1
-        replan_interval = 5  # replan every ~0.25s at 20Hz
-        replanned = False
+        replan_interval = 3  # ~0.15s at 20Hz
         if (self._replan_counter >= replan_interval or
                 self._prev_path is None or len(self._prev_path) < 3):
             path = self._plan_path_legacy()
@@ -2291,6 +2390,7 @@ class LaneFollowerNode(Node):
             replanned = True
         else:
             path = self._prev_path
+            replanned = False
 
         if path and len(path) >= 2:
             self._publish_viz(path, obstacles_viz)

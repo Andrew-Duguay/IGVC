@@ -64,10 +64,14 @@ def launch_setup(context, *args, **kwargs):
         print(f"\n[WARNING] Invalid speed '{speed_str}'. Defaulting to 1000 Hz.\n")
         target_hz = 1000
 
+<<<<<<< HEAD
     # --render-engine ogre forces Ogre1 instead of Ogre2 — required on WSL2
     # where Ogre2's GPU camera path renders at ~2 Hz (or 0 Hz for one of two
     # cameras). Ogre1 uses an older GL path that's stable in WSL2. --render-engine ogre
     gz_arguments = f"{world_path} -r  " + f"{gui_arg}" + f"-z {target_hz}"
+=======
+    gz_arguments = f"{world_path} -r --render-engine ogre2 " + f"{gui_arg}" + f"-z {target_hz}"
+>>>>>>> 23ea4021c98e657f78bec349e1af996ceb71e635
     launch_gazebo_action = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
@@ -126,7 +130,12 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # 7. CREATE BRIDGE BETWEEN ROS AND GAZEBO
-    gz_pose_topic = f"/model/littleblue_sim/pose"
+    # Ground-truth world pose is published by the model-attached
+    # OdometryPublisher plugin (see gazebo_plugins.xacro) as
+    # ignition.msgs.Odometry on /world_odom. The Pose_V streams from
+    # SceneBroadcaster strip entity names in their TFMessage conversion,
+    # and the PosePublisher plugin silently drops top-level model pose
+    # for URDF-spawned models in Fortress 6 — so odometry is used here.
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -146,12 +155,27 @@ def launch_setup(context, *args, **kwargs):
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
+<<<<<<< HEAD
             f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose"        
+=======
+            '/world_odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+>>>>>>> 23ea4021c98e657f78bec349e1af996ceb71e635
         ],
-        remappings=[
-            (gz_pose_topic, '/world_pose'),
-        ],       
         output='screen'
+    )
+
+    # Extract the littleblue_sim pose from the bridged TFMessage stream
+    # and republish as /world_pose (PoseStamped).
+    world_pose_relay = Node(
+        package='littleblue_sim',
+        executable='world_pose_relay.py',
+        name='world_pose_relay',
+        parameters=[{
+            'input_topic': '/world_odom',
+            'output_topic': '/world_pose',
+            'frame_id': 'world',
+        }],
+        output='screen',
     )
 
     nodes_to_start = [
@@ -163,9 +187,10 @@ def launch_setup(context, *args, **kwargs):
     is_world_building = world_building_arg in ["true", "True", "1"]
     if not is_world_building:
         nodes_to_start.extend([
-            robot_state_publisher_node, 
-            robot_node, 
+            robot_state_publisher_node,
+            robot_node,
             ros_gz_bridge,
+            world_pose_relay,
         ])
     return nodes_to_start
                    
