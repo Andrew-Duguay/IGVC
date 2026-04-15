@@ -458,6 +458,7 @@ class LaneFollowerNode(Node):
         self.odom_yaw = math.atan2(siny, cosy)
 
     def _world_pose_cb(self, msg):
+        print("debug. RReached world_pose_cb")
         self.world_x = msg.pose.position.x
         self.world_y = msg.pose.position.y
         q = msg.pose.orientation

@@ -1,0 +1,14 @@
+# /worlds/full_course/config.yaml
+spawn:
+  x: '-13.5'
+  y: '10.6'
+  z: '0.1'
+  R: '0.0'
+  P: '0.0'
+  Y: '1.4'
+
+finish:
+  x1: '50.0'
+  y1: '55.0'
+  x2: '50.0'
+  y2: '50.0'

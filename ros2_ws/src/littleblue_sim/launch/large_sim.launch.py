@@ -66,8 +66,8 @@ def launch_setup(context, *args, **kwargs):
 
     # --render-engine ogre forces Ogre1 instead of Ogre2 — required on WSL2
     # where Ogre2's GPU camera path renders at ~2 Hz (or 0 Hz for one of two
-    # cameras). Ogre1 uses an older GL path that's stable in WSL2.
-    gz_arguments = f"{world_path} -r --render-engine ogre " + f"{gui_arg}" + f"-z {target_hz}"
+    # cameras). Ogre1 uses an older GL path that's stable in WSL2. --render-engine ogre
+    gz_arguments = f"{world_path} -r  " + f"{gui_arg}" + f"-z {target_hz}"
     launch_gazebo_action = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
@@ -146,7 +146,7 @@ def launch_setup(context, *args, **kwargs):
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-            f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose"
+            f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose"        
         ],
         remappings=[
             (gz_pose_topic, '/world_pose'),
