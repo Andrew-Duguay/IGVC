@@ -42,8 +42,8 @@
     <include> <uri>model://floor_boundary</uri> <name>sw</name> <pose>-10 -10 0 0 0 0</pose> </include> -->
     
     <gui fullscreen='0'>
-      <camera name='camera'>
-        <pose>-15.2 2.2 14.1 0 0.4 -0.02</pose>
+      <camera name='user_camera'>
+        <pose>-5.2 -2.2 14.4 0 1.48 -0.02</pose>
         <view_controller>orbit</view_controller>
       </camera>
     </gui>

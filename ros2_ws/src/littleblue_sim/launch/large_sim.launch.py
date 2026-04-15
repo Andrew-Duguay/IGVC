@@ -64,14 +64,7 @@ def launch_setup(context, *args, **kwargs):
         print(f"\n[WARNING] Invalid speed '{speed_str}'. Defaulting to 1000 Hz.\n")
         target_hz = 1000
 
-<<<<<<< HEAD
-    # --render-engine ogre forces Ogre1 instead of Ogre2 — required on WSL2
-    # where Ogre2's GPU camera path renders at ~2 Hz (or 0 Hz for one of two
-    # cameras). Ogre1 uses an older GL path that's stable in WSL2. --render-engine ogre
-    gz_arguments = f"{world_path} -r  " + f"{gui_arg}" + f"-z {target_hz}"
-=======
     gz_arguments = f"{world_path} -r --render-engine ogre2 " + f"{gui_arg}" + f"-z {target_hz}"
->>>>>>> 23ea4021c98e657f78bec349e1af996ceb71e635
     launch_gazebo_action = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
@@ -155,11 +148,7 @@ def launch_setup(context, *args, **kwargs):
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-<<<<<<< HEAD
-            f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose"        
-=======
             '/world_odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
->>>>>>> 23ea4021c98e657f78bec349e1af996ceb71e635
         ],
         output='screen'
     )

@@ -26,6 +26,18 @@
       <joint_name>left_wheel_joint</joint_name>
       <joint_name>right_wheel_joint</joint_name>
     </plugin>
+
+    <!-- Ground-truth world pose as odometry (nav_msgs/Odometry). Used in
+         place of PosePublisher which silently fails to emit top-level
+         model pose for URDF-spawned models in Fortress 6. -->
+    <plugin filename="ignition-gazebo-odometry-publisher-system"
+            name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <odom_topic>world_odom</odom_topic>
+      <dimensions>3</dimensions>
+    </plugin>
   </gazebo>
 
   <!-- Caster: near-zero friction so in-place rotation works -->
@@ -150,16 +162,5 @@
       </navsat>
     </sensor>
   </gazebo>
-
-<gazebo>
-  <plugin
-    filename="ignition-gazebo-pose-publisher-system"
-    name="ignition::gazebo::systems::PosePublisher">
-    <publish_link_pose>false</publish_link_pose>
-    <use_pose_vector_msg>false</use_pose_vector_msg>
-    <publish_nested_models>false</publish_nested_models>
-    <publish_model_pose>true</publish_model_pose>
-  </plugin>
-</gazebo>
 
 </robot>
