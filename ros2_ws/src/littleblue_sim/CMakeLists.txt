@@ -20,9 +20,10 @@ install(
     share/${PROJECT_NAME}
 )
 
-# Install the Python executable
+# Install the Python executables
 install(PROGRAMS
   pass_or_fail/pass_or_fail.py
+  scripts/world_pose_relay.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
