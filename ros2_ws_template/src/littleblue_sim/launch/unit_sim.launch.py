@@ -123,11 +123,16 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # 7. CREATE BRIDGE BETWEEN ROS AND GAZEBO
+    # Ground-truth world pose is published by the model-attached
+    # OdometryPublisher plugin (see gazebo_plugins.xacro) as
+    # ignition.msgs.Odometry on /world_odom. The Pose_V streams from
+    # SceneBroadcaster strip entity names in their TFMessage conversion,
+    # and the PosePublisher plugin silently drops top-level model pose
+    # for URDF-spawned models in Fortress 6 — so odometry is used here.
     gz_chassis_topic = f"/world/{world_name}/model/littleblue_sim/link/base_footprint/sensor/chassis_sensor/contact"
     gz_caster_topic = f"/world/{world_name}/model/littleblue_sim/link/caster_link/sensor/caster_sensor/contact"
     gz_left_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/left_wheel_link/sensor/left_wheel_sensor/contact"
     gz_right_wheel_topic = f"/world/{world_name}/model/littleblue_sim/link/right_wheel_link/sensor/right_wheel_sensor/contact"
-    gz_pose_topic = f"/model/littleblue_sim/pose"
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -140,29 +145,41 @@ def launch_setup(context, *args, **kwargs):
             '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist',
             '/odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
             '/joint_states@sensor_msgs/msg/JointState[ignition.msgs.Model',
-            # Cameras
-            '/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
-            '/depth/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
+            # Cameras (URDF declares left + right RGB only — no depth camera)
+            '/left_camera/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
+            '/right_camera/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
             # Environment Sensors
             '/scan@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu[ignition.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-            # Gazebo
+            '/world_odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            # Collision for testing
             f"{gz_chassis_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_caster_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_left_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
             f"{gz_right_wheel_topic}@ros_gz_interfaces/msg/Contacts[ignition.msgs.Contacts",
-            f"{gz_pose_topic}@geometry_msgs/msg/PoseStamped[ignition.msgs.Pose",
-        ],       
-        # Contact Sensors: Remap for cleanliness
+        ],
         remappings=[
             (gz_chassis_topic, '/chassis_sensor'),
             (gz_caster_topic, '/caster_sensor'),
             (gz_left_wheel_topic, '/left_wheel_sensor'),
             (gz_right_wheel_topic, '/right_wheel_sensor'),
-            (gz_pose_topic, '/world_pose'),
         ],
         output='screen'
+    )
+
+    # Extract the littleblue_sim pose from the bridged TFMessage stream
+    # and republish as /world_pose (PoseStamped).
+    world_pose_relay = Node(
+        package='littleblue_sim',
+        executable='world_pose_relay.py',
+        name='world_pose_relay',
+        parameters=[{
+            'input_topic': '/world_odom',
+            'output_topic': '/world_pose',
+            'frame_id': 'world',
+        }],
+        output='screen',
     )
 
     # 8. LAUNCH "REFEREE". MONITORS SIMULATION FOR COURSE COMPLETION, LINE-CROSSING, AND OBSTACLE COLLISION
@@ -203,6 +220,7 @@ def launch_setup(context, *args, **kwargs):
             robot_state_publisher_node, 
             robot_node, 
             ros_gz_bridge, 
+            world_pose_relay,
             pass_or_fail_node
         ])
     return nodes_to_start
