@@ -1,0 +1,45 @@
+# LittleBlue — per-course deployment config.
+#
+# Edit this file at the venue to describe today's course. Everything
+# else (camera geometry, physical dims, HSV thresholds, EKF covariance)
+# is baked into the deploy launch and stays fixed across events.
+#
+# Units: metres, radians.
+
+lane_follower_node:
+  ros__parameters:
+    # --- No-Man's-Land waypoint sequence for this course ---
+    # Format: [entry_x, entry_y, wp1_x, wp1_y, ..., exit_x, exit_y]
+    # Robot picks up NML when it gets within `nml_activate_radius` of
+    # entry, navigates to each waypoint in order, releases at the last.
+    # Leave [] if the course has no NML segment.
+    nml_waypoints: [10.0, 8.75, 0.0, 6.0, 10.0, 5.0]
+    nml_activate_radius: 2.0
+    nml_exit_radius: 1.0
+    nml_corridor_width: 3.0
+
+    # --- Autonomy approach mode ('A' is the validated default) ---
+    approach_mode: 'A'
+
+    # --- Global speed cap for this course (m/s) ---
+    cruise_speed: 0.35
+
+left_lane_candidate:
+  ros__parameters:
+    # --- Left-camera mounting geometry (metres / radians) ---
+    # Measured from base_footprint (robot centre at ground).
+    # Keep in sync with the mount plate; only remeasure if the plate
+    # is physically moved.
+    camera_height: 0.32
+    camera_lateral_offset: 0.28   # +y = left of centerline
+    camera_forward_offset: 0.38
+    camera_pitch: 0.13            # rad, positive = tilted down
+    camera_yaw: 0.32              # rad, positive = rotated left
+
+right_lane_candidate:
+  ros__parameters:
+    camera_height: 0.32
+    camera_lateral_offset: -0.28  # right side
+    camera_forward_offset: 0.38
+    camera_pitch: 0.13
+    camera_yaw: -0.32

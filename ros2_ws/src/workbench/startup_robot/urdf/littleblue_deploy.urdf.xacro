@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+  Deploy URDF for the real LittleBlue robot.
+
+  Reuses the chassis / material / sensor definitions from littleblue_sim
+  (so geometry and TF tree match what the autonomy was tuned against)
+  but intentionally skips gazebo_plugins.xacro — those plugins only run
+  inside Gazebo and aren't valid on the real robot.
+
+  robot_state_publisher reads this and emits the TF tree that the
+  autonomy, lane detectors, lidar, and EKF all depend on.
+-->
+<robot name="littleblue" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find littleblue_sim)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find littleblue_sim)/urdf/chassis.xacro"/>
+  <xacro:include filename="$(find littleblue_sim)/urdf/sensors.xacro"/>
+</robot>
