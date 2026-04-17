@@ -54,7 +54,7 @@ class LaneCandidateNode(Node):
 
         # Method-specific params
         self.declare_parameter('brightness_thresh', 200)
-        # Locked defaults for outdoor white-paint-on-grass (IGVC course).
+        # Locked defaults for outdoor white-paint-on-concrete (IGVC course).
         # Deliberately loose so they work across overcast → direct sun
         # without per-venue tuning. Only retune if the lighting is truly
         # unusual (night, deep shadow) — see deployment README.

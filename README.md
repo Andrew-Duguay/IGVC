@@ -255,5 +255,5 @@ If the autonomy behaves like it's in the wrong place, check:
 - Autonomy behaviour in tight barrel clusters is still being tuned in
   sim; outdoor behaviour may differ. Treat the first outdoor run as an
   operating test, not a correctness test.
-- HSV thresholds are locked for white-paint-on-grass under normal
+- HSV thresholds are locked for white-paint-on-concrete under normal
   daylight. Extreme lighting (night, heavy shadow) may need retuning.
