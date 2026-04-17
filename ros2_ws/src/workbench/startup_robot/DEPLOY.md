@@ -146,6 +146,58 @@ autonomy stack on the physical robot. Everything sim-specific lives in
    From `src/motorControl/rpi/controller_ws/src/` in the existing
    real-stack repo. Copy both packages into `ros2_ws/src/` and rebuild.
 
+## YOLO TensorRT (Jetson)
+
+The deploy launch starts two YOLO instances (one per camera) + two
+`obstacle_projector` nodes. YOLO detections get fused with lidar on
+`/obstacle_points` and feed the A* planner's obstacle list.
+
+### What you need to provide
+
+1. **A compiled TensorRT engine file** at
+   `$HOME/yolo_weights/<name>.engine` (or override the path with
+   `YOLO_ENGINE=...` before launching).
+
+   Build one on the Jetson with Ultralytics:
+
+   ```bash
+   # Start from a PyTorch checkpoint (generic YOLOv11n for starters)
+   yolo export model=yolo11n.pt format=engine imgsz=640 device=0
+   # Move the result to the expected location
+   mkdir -p ~/yolo_weights
+   mv yolo11n.engine ~/yolo_weights/
+   ```
+
+   **Compile on the target machine.** TensorRT engines are tied to the
+   exact GPU + CUDA + TensorRT version they were built against. An
+   `.engine` built on a dev laptop will not load on the Jetson.
+
+2. **Depth cameras** producing `/left_camera/depth/image_raw` and
+   `/right_camera/depth/image_raw`. `install_deps.sh` does not install
+   a depth-camera driver — pick one for your hardware (RealSense,
+   ZED, Astra, etc.) and wire the launch include in
+   `deploy.launch.py` next to the `# left_depth_launch = ...` comment.
+
+### Verify YOLO is running
+
+```bash
+ros2 topic hz /left_yolo/detections    # expect ~10–15 Hz
+ros2 topic hz /right_yolo/detections
+ros2 topic hz /obstacle_points         # fires from lidar AND projector
+```
+
+If `/obstacle_points` only fires from the lidar rate, depth topics
+aren't synchronising with the detection stream — check
+`/left_camera/depth/image_raw` and `/right_camera/depth/image_raw`
+are publishing and their timestamps are close to the RGB stream.
+
+### CPU fallback
+
+Set `device='cpu'` in the YOLO parameter block in `deploy.launch.py`.
+Ultralytics will fall back to PyTorch CPU inference — works but is
+far too slow for real-time control. Only useful for bring-up on a
+non-Jetson machine.
+
 ## Per-course config (day-of)
 
 Edit `src/workbench/startup_robot/config/course.yaml`:

@@ -43,11 +43,24 @@ sudo apt install -y \
 echo "==> Serial for motor controller"
 sudo apt install -y python3-serial
 
+echo "==> YOLO TensorRT Python runtime (Jetson)"
+# Ultralytics is the easiest runtime for loading .pt / .engine weights.
+# On Jetson it uses the system TensorRT + CUDA from JetPack.
+# Requires torch built for the Jetson's JetPack. Ultralytics pulls a
+# compatible wheel where possible; for older Jetsons you may need
+# to install torch from NVIDIA's Jetson wheel index manually first.
+sudo -H pip3 install --upgrade ultralytics opencv-python
+
 echo
 echo "Still to install manually (pick the driver matching your hardware):"
-echo "  * IMU driver   (e.g. ros-iron-microstrain-inertial-driver)"
-echo "  * LiDAR driver (sllidar_ros2 — build from source from the existing"
-echo "                  real-stack workspace if no apt package available)"
+echo "  * IMU driver     (e.g. ros-iron-microstrain-inertial-driver)"
+echo "  * LiDAR driver   (sllidar_ros2 — build from source from the existing"
+echo "                    real-stack workspace if no apt package available)"
+echo "  * Depth camera   (e.g. ros-iron-realsense2-camera)"
+echo
+echo "Still required:"
+echo "  * YOLO weights file at \$HOME/yolo_weights/<name>.engine"
+echo "    (or override via YOLO_ENGINE env var — see DEPLOY.md §YOLO)"
 echo
 echo "==> Copy udev rules"
 if [[ -f /etc/udev/rules.d/99-littleblue.rules ]]; then

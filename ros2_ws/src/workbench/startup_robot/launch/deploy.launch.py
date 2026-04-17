@@ -97,6 +97,36 @@ def generate_launch_description():
         }.items(),
     )
 
+    # ─── Depth camera driver (professor picks hardware) ────────────
+    # Required output (per side):
+    #   Left  depth image on  /left_camera/depth/image_raw   (32FC1, metres)
+    #   Right depth image on  /right_camera/depth/image_raw  (32FC1, metres)
+    #   frame_ids matching left_camera_link / right_camera_link
+    #
+    # Common picks:
+    #   Intel RealSense D435(i)  → ros-iron-realsense2-camera
+    #   Stereolabs ZED2          → zed_ros2_wrapper (from source)
+    #   Orbbec Astra             → ros-iron-astra-camera
+    #
+    # If the chosen camera is a single stereo device (like ZED/RealSense)
+    # that produces both RGB + depth, you can replace the two `usb_cam`
+    # blocks above with two realsense2_camera launches (one per serial
+    # number), each remapping its image_raw + depth/image_raw to the
+    # left_camera/* or right_camera/* namespace.
+    #
+    # left_depth_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         os.path.join(get_package_share_directory('realsense2_camera'),
+    #                      'launch', 'rs_launch.py')),
+    #     launch_arguments={
+    #         'serial_no': '<LEFT_CAMERA_SERIAL>',
+    #         'depth_module.profile': '640x480x15',
+    #         'camera_name': 'left_camera',
+    #         'frame_id': 'left_camera_link',
+    #     }.items(),
+    # )
+    # right_depth_launch = ...   # mirror with RIGHT_CAMERA_SERIAL
+
     # ─── IMU driver (professor fills in) ───────────────────────────
     # Required output:
     #   Topic:        /imu/data
@@ -272,6 +302,75 @@ def generate_launch_description():
         output='screen',
     )
 
+    # ─── YOLO TensorRT detection (left + right cameras) ────────────
+    # Runs on the Jetson GPU. Weights file is a compiled TensorRT
+    # engine — see DEPLOY.md §YOLO for how to produce one from a .pt
+    # or .onnx on the Jetson.
+    yolo_weights = os.environ.get(
+        'YOLO_ENGINE',
+        os.path.expanduser('~/yolo_weights/yolo11n.engine'))
+    yolo_common = {
+        'use_sim_time': False,
+        'weights': yolo_weights,
+        'img_size': 640,
+        'conf': 0.5,
+        'device': 0,          # GPU index; set to 'cpu' for CPU fallback
+    }
+    left_yolo = Node(
+        package='yolo_trt_ros2', executable='yolo_trt_node',
+        name='left_yolo',
+        parameters=[{**yolo_common,
+                     'image_topic': '/left_camera/image_raw',
+                     'detections_topic': '/left_yolo/detections',
+                     'annotated_topic': '/left_yolo/image_annotated'}],
+        output='screen',
+    )
+    right_yolo = Node(
+        package='yolo_trt_ros2', executable='yolo_trt_node',
+        name='right_yolo',
+        parameters=[{**yolo_common,
+                     'image_topic': '/right_camera/image_raw',
+                     'detections_topic': '/right_yolo/detections',
+                     'annotated_topic': '/right_yolo/image_annotated'}],
+        output='screen',
+    )
+
+    # ─── Obstacle projector: YOLO bbox + depth → /obstacle_points ─
+    # Publishes alongside lidar_obstacle on the same topic; lane_follower
+    # consumes the union.
+    projector_common = {
+        'use_sim_time': False,
+        # RGB intrinsics must match the usb_cam config above. These are
+        # rough defaults; refine once the camera is calibrated.
+        'rgb_fx': 349.2, 'rgb_fy': 349.2,
+        'rgb_cx': 320.0, 'rgb_cy': 240.0,
+        'depth_fx': 337.22, 'depth_fy': 337.22,
+        'depth_cx': 320.0, 'depth_cy': 240.0,
+        'camera_height': 0.32,
+        'camera_forward_offset': 0.38,
+        'depth_patch_size': 5,
+        'min_range': 0.3, 'max_range': 8.0,
+        'sync_slop': 0.1,
+    }
+    left_projector = Node(
+        package='littleblue_vision', executable='obstacle_projector_node',
+        name='left_obstacle_projector',
+        parameters=[{**projector_common,
+                     'camera_lateral_offset': 0.28,
+                     'detection_topic': '/left_yolo/detections',
+                     'depth_topic': '/left_camera/depth/image_raw'}],
+        output='screen',
+    )
+    right_projector = Node(
+        package='littleblue_vision', executable='obstacle_projector_node',
+        name='right_obstacle_projector',
+        parameters=[{**projector_common,
+                     'camera_lateral_offset': -0.28,
+                     'detection_topic': '/right_yolo/detections',
+                     'depth_topic': '/right_camera/depth/image_raw'}],
+        output='screen',
+    )
+
     rviz_node = Node(
         package='rviz2', executable='rviz2', name='rviz2',
         arguments=['-d', rviz_config],
@@ -295,5 +394,8 @@ def generate_launch_description():
         # Autonomy
         lane_follower,
         left_detector, right_detector, lane_accumulator, lidar_obstacle,
+        # YOLO + depth-projected obstacles (Jetson TensorRT)
+        left_yolo, right_yolo,
+        left_projector, right_projector,
         rviz_node,
     ])
