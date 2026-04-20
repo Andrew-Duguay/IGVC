@@ -38,9 +38,10 @@ autonomy stack on the physical robot. Everything sim-specific lives in
    bash src/workbench/startup_robot/install_deps.sh
    ```
 
-   This pulls in `robot_localization`, `usb_cam`, `nmea_navsat_driver`,
-   `joy`, and the other runtime deps, and installs the udev rules into
-   `/etc/udev/rules.d/`.
+   This pulls in `robot_localization`, `nmea_navsat_driver`, `joy`, and
+   the other runtime deps, and installs the udev rules into
+   `/etc/udev/rules.d/`. No camera driver is installed — bring your
+   own (see "Cameras" below).
 
 2. **Fill in the udev rules**
 
@@ -62,10 +63,78 @@ autonomy stack on the physical robot. Everything sim-specific lives in
    Verify each symlink appears:
 
    ```bash
-   ls -l /dev/lidar /dev/gps /dev/imu /dev/motor /dev/camera_left /dev/camera_right
+   ls -l /dev/lidar /dev/gps /dev/imu /dev/motor
    ```
 
-3. **Choose and install the IMU + GPS drivers**
+   (The `camera_left` / `camera_right` entries in the shipped rules
+   file are only relevant if you end up using a USB webcam driver.
+   Basler / RealSense / ZED drivers don't need udev — they identify
+   devices by serial number from inside their own launch files.)
+
+3. **Cameras**
+
+   The deploy launch does **not** start a camera driver. Bring your
+   own and plumb its `sensor_msgs/Image` output into our topic names.
+
+   ### Contract
+
+   | Property       | Required value                            |
+   | -------------- | ----------------------------------------- |
+   | Left topic     | `sensor_msgs/msg/Image` on `/left_camera/image_raw`  (override with `left_image_topic:=...`)  |
+   | Right topic    | `sensor_msgs/msg/Image` on `/right_camera/image_raw` (override with `right_image_topic:=...`) |
+   | `frame_id`     | `left_camera_link` / `right_camera_link`  |
+   | Encoding       | `rgb8` or `bgr8` (cv_bridge handles both) |
+   | Rate           | ≥ 10 Hz                                   |
+
+   ### Driver integration examples
+
+   **Basler (pylon_ros2_camera)** — typically shipped in a Docker
+   container (the Pylon driver only supports Ubuntu ≥ 24.04):
+
+   ```bash
+   # On Docker host: same ROS_DOMAIN_ID + network=host so the topics
+   # are discoverable from the 22.04 Iron workspace.
+   docker run --network host -e ROS_DOMAIN_ID=$ROS_DOMAIN_ID \
+     your-basler-image:latest
+
+   # On host, launch autonomy with your driver's actual topic names:
+   ros2 launch startup_robot deploy.launch.py \
+     left_image_topic:=/pylon_left/image_raw \
+     right_image_topic:=/pylon_right/image_raw
+   ```
+
+   Make sure the container and host agree on RMW implementation
+   (both Fast DDS or both Cyclone DDS) and domain ID — otherwise
+   topics won't cross the container boundary.
+
+   **Intel RealSense**:
+
+   ```bash
+   sudo apt install ros-iron-realsense2-camera
+   # Launch per-camera with the canonical topic names:
+   ros2 launch realsense2_camera rs_launch.py \
+     serial_no:=<LEFT_SERIAL> \
+     camera_name:=left_camera
+   # Autonomy picks up /left_camera/image_raw automatically.
+   ```
+
+   **Plain USB webcam** (if you ever do go back to UVC):
+
+   ```bash
+   sudo apt install ros-iron-usb-cam
+   ros2 run usb_cam usb_cam_node_exe \
+     --ros-args -p video_device:=/dev/video0 \
+     -r image_raw:=/left_camera/image_raw
+   ```
+
+   ### Verify
+
+   ```bash
+   ros2 topic hz /left_camera/image_raw     # expect ~15 Hz
+   ros2 topic echo --once /left_camera/image_raw | grep -E "encoding|frame_id|width|height"
+   ```
+
+4. **Choose and install the IMU + GPS drivers**
 
    The deploy launch leaves these as commented-out placeholders because
    the choice depends on hardware. You must pick, install, and launch
@@ -135,13 +204,13 @@ autonomy stack on the physical robot. Everything sim-specific lives in
      `gps_link` exist in the TF tree (`ros2 run tf2_tools view_frames`)
      and match where the sensors are physically mounted.
 
-4. **Build `sllidar_ros2`**
+5. **Build `sllidar_ros2`**
 
    Pulled from the existing real-stack workspace
    (`Dev/ROS2/lidar_ws/src/sllidar_ros2`). Copy it into
    `ros2_ws/src/` and `colcon build`.
 
-5. **Build `game_controller` + `data_interface`**
+6. **Build `game_controller` + `data_interface`**
 
    From `src/motorControl/rpi/controller_ws/src/` in the existing
    real-stack repo. Copy both packages into `ros2_ws/src/` and rebuild.

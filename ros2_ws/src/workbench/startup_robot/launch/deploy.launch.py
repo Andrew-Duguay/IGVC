@@ -44,6 +44,22 @@ def generate_launch_description():
         'approach', default_value='A',
         description='Autonomy approach mode',
     )
+    # Camera topics are contract inputs to the autonomy: whatever node
+    # publishes sensor_msgs/Image on these topics (usb_cam, Basler via
+    # pylon_ros2_camera, RealSense, etc.) feeds lane detection + YOLO.
+    # Default names match the sim for backward compat; override on
+    # launch with e.g. left_image_topic:=/pylon_camera_left/image_raw
+    # if your driver publishes elsewhere.
+    left_image_topic_arg = DeclareLaunchArgument(
+        'left_image_topic', default_value='/left_camera/image_raw',
+        description='sensor_msgs/Image topic from the left camera driver',
+    )
+    right_image_topic_arg = DeclareLaunchArgument(
+        'right_image_topic', default_value='/right_camera/image_raw',
+        description='sensor_msgs/Image topic from the right camera driver',
+    )
+    left_image_topic = LaunchConfiguration('left_image_topic')
+    right_image_topic = LaunchConfiguration('right_image_topic')
 
     # ── 1. Robot description + state publisher ─────────────────────
     doc = xacro.process_file(urdf_xacro).toxml()
@@ -56,34 +72,13 @@ def generate_launch_description():
     )
 
     # ── 2. Sensor drivers ───────────────────────────────────────────
-    # Cameras: usb_cam, one instance per device. Device paths come from
-    # the udev rules so USB enumeration order can't break things.
-    left_cam = Node(
-        package='usb_cam', executable='usb_cam_node_exe', name='left_camera',
-        parameters=[{
-            'video_device': '/dev/camera_left',
-            'image_width': 640, 'image_height': 480,
-            'pixel_format': 'yuyv', 'framerate': 15.0,
-            'camera_frame_id': 'left_camera_link',
-            'camera_name': 'left_camera',
-        }],
-        remappings=[('image_raw', '/left_camera/image_raw'),
-                    ('camera_info', '/left_camera/camera_info')],
-        output='screen',
-    )
-    right_cam = Node(
-        package='usb_cam', executable='usb_cam_node_exe', name='right_camera',
-        parameters=[{
-            'video_device': '/dev/camera_right',
-            'image_width': 640, 'image_height': 480,
-            'pixel_format': 'yuyv', 'framerate': 15.0,
-            'camera_frame_id': 'right_camera_link',
-            'camera_name': 'right_camera',
-        }],
-        remappings=[('image_raw', '/right_camera/image_raw'),
-                    ('camera_info', '/right_camera/camera_info')],
-        output='screen',
-    )
+    # NOTE: the camera driver is NOT started here — on-robot cameras
+    # can be anything (Basler/pylon, RealSense, ZED, USB webcam, …),
+    # and each has its own launch file. Start your camera driver
+    # separately and point its output at the topic names in
+    # `left_image_topic` / `right_image_topic` launch args (defaults:
+    # /left_camera/image_raw and /right_camera/image_raw). See
+    # DEPLOY.md §Cameras for driver integration recipes.
 
     # Lidar (RPLIDAR via sllidar_ros2). Professor installs the package
     # from the existing real-stack workspace.
@@ -133,7 +128,7 @@ def generate_launch_description():
     #   Message:      sensor_msgs/msg/Imu
     #   frame_id:     imu_link
     #   Rate:         >= 50 Hz
-    # See DEPLOY.md §3 for the full contract and driver picks.
+    # See DEPLOY.md §4 for the full contract and driver picks.
     # Uncomment + replace <imu_pkg> / <imu>.launch.py with the chosen
     # driver's names, and append `imu_launch` to the LaunchDescription
     # list at the bottom of this file.
@@ -154,7 +149,7 @@ def generate_launch_description():
     #   Message:      sensor_msgs/msg/NavSatFix
     #   frame_id:     gps_link
     #   Rate:         >= 1 Hz
-    # See DEPLOY.md §3 for the full contract and driver picks.
+    # See DEPLOY.md §4 for the full contract and driver picks.
     #
     # gps_launch = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(
@@ -262,7 +257,7 @@ def generate_launch_description():
         parameters=[
             course_yaml,
             {**_detector_common,
-             'image_topic': '/left_camera/image_raw',
+             'image_topic': left_image_topic,
              'output_topic': '/candidate/left_lane_points',
              'debug_topic': '/candidate/left_debug'},
         ],
@@ -274,7 +269,7 @@ def generate_launch_description():
         parameters=[
             course_yaml,
             {**_detector_common,
-             'image_topic': '/right_camera/image_raw',
+             'image_topic': right_image_topic,
              'output_topic': '/candidate/right_lane_points',
              'debug_topic': '/candidate/right_debug'},
         ],
@@ -320,7 +315,7 @@ def generate_launch_description():
         package='yolo_trt_ros2', executable='yolo_trt_node',
         name='left_yolo',
         parameters=[{**yolo_common,
-                     'image_topic': '/left_camera/image_raw',
+                     'image_topic': left_image_topic,
                      'detections_topic': '/left_yolo/detections',
                      'annotated_topic': '/left_yolo/image_annotated'}],
         output='screen',
@@ -329,7 +324,7 @@ def generate_launch_description():
         package='yolo_trt_ros2', executable='yolo_trt_node',
         name='right_yolo',
         parameters=[{**yolo_common,
-                     'image_topic': '/right_camera/image_raw',
+                     'image_topic': right_image_topic,
                      'detections_topic': '/right_yolo/detections',
                      'annotated_topic': '/right_yolo/image_annotated'}],
         output='screen',
@@ -381,10 +376,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         approach_arg, rviz_arg,
+        left_image_topic_arg, right_image_topic_arg,
         # Robot description
         rsp,
-        # Sensors
-        left_cam, right_cam, lidar_launch,
+        # Sensors (camera drivers run separately — see DEPLOY.md §Cameras)
+        lidar_launch,
         # imu_launch, gps_launch,  # uncomment once driver pkgs chosen
         # Localization
         ekf_local, ekf_global, navsat,

@@ -25,7 +25,6 @@ sudo apt install -y \
 echo "==> Localization + sensor drivers"
 sudo apt install -y \
   ros-iron-robot-localization \
-  ros-iron-usb-cam \
   ros-iron-nmea-navsat-driver \
   ros-iron-image-transport \
   ros-iron-compressed-image-transport
