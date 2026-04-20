@@ -80,16 +80,16 @@ autonomy stack on the physical robot. Everything sim-specific lives in
 
    | Property       | Required value                            |
    | -------------- | ----------------------------------------- |
-   | Left topic     | `sensor_msgs/msg/Image` on `/first_cam_id/first_cam_node/image_raw` (override with `left_image_topic:=...`) |
-   | Right topic    | `sensor_msgs/msg/Image` on `/second_cam_id/second_cam_node/image_raw` (override with `right_image_topic:=...`) |
+   | Left topic     | `sensor_msgs/msg/Image` — topic name passed via `left_image_topic:=...` launch arg  |
+   | Right topic    | `sensor_msgs/msg/Image` — topic name passed via `right_image_topic:=...` launch arg |
    | `frame_id`     | `left_camera_link` / `right_camera_link`  |
    | Encoding       | `rgb8` or `bgr8` (cv_bridge handles both) |
    | Rate           | ≥ 10 Hz                                   |
 
-   The default topic names match the Basler `pylon_ros2_camera` stack
-   already running on LittleBlue (the Pylon driver lives in an
-   Ubuntu-24.04 Docker container; topics flow to the 22.04 Iron host
-   via DDS).
+   The defaults (`/left_camera/image_raw`, `/right_camera/image_raw`)
+   are placeholder names — the actual topics depend on whichever
+   camera driver is running on the robot. Pass the driver's real
+   topic names at launch time (see examples below).
 
    ### Cross-container DDS
 
@@ -127,9 +127,11 @@ autonomy stack on the physical robot. Everything sim-specific lives in
 
    ### Verify
 
+   Replace `<your_topic>` with whatever you passed to `left_image_topic`:
+
    ```bash
-   ros2 topic hz /first_cam_id/first_cam_node/image_raw     # expect ~15 Hz
-   ros2 topic echo --once /first_cam_id/first_cam_node/image_raw \
+   ros2 topic hz <your_topic>     # expect ~15 Hz
+   ros2 topic echo --once <your_topic> \
      | grep -E "encoding|frame_id|width|height"
    ```
 

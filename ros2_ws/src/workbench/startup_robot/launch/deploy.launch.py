@@ -44,18 +44,18 @@ def generate_launch_description():
         'approach', default_value='A',
         description='Autonomy approach mode',
     )
-    # Camera topics are contract inputs to the autonomy. Defaults match
-    # the topic names published by the Basler pylon_ros2_camera driver
-    # running on LittleBlue. Override at launch time if you use
-    # different hardware.
+    # Camera topics are contract inputs to the autonomy. Defaults are
+    # intentionally generic — override at launch time to match whatever
+    # the on-robot camera driver actually publishes, e.g.
+    #   left_image_topic:=/pylon_camera_left/image_raw
+    #   right_image_topic:=/pylon_camera_right/image_raw
+    # See DEPLOY.md §Cameras.
     left_image_topic_arg = DeclareLaunchArgument(
-        'left_image_topic',
-        default_value='/first_cam_id/first_cam_node/image_raw',
+        'left_image_topic', default_value='/left_camera/image_raw',
         description='sensor_msgs/Image topic from the left camera driver',
     )
     right_image_topic_arg = DeclareLaunchArgument(
-        'right_image_topic',
-        default_value='/second_cam_id/second_cam_node/image_raw',
+        'right_image_topic', default_value='/right_camera/image_raw',
         description='sensor_msgs/Image topic from the right camera driver',
     )
     left_image_topic = LaunchConfiguration('left_image_topic')
@@ -72,13 +72,11 @@ def generate_launch_description():
     )
 
     # ── 2. Sensor drivers ───────────────────────────────────────────
-    # NOTE: the camera driver is NOT started here — the Basler pylon
-    # driver runs in its own (Ubuntu 24.04) Docker container on the
-    # robot. Default topics below match LittleBlue's Basler setup:
-    #   /first_cam_id/first_cam_node/image_raw   (left)
-    #   /second_cam_id/second_cam_node/image_raw (right)
-    # Override via left_image_topic / right_image_topic launch args
-    # if the camera stack changes. See DEPLOY.md §Cameras.
+    # NOTE: the camera driver is NOT started here. On LittleBlue the
+    # Basler pylon_ros2_camera driver runs in its own Ubuntu-24.04
+    # Docker container; pass the container's topic names via the
+    # left_image_topic / right_image_topic launch args. See
+    # DEPLOY.md §Cameras.
 
     # Lidar (RPLIDAR via sllidar_ros2). Professor installs the package
     # from the existing real-stack workspace.
