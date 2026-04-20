@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>Starts robot's ROS2 nodes</description>
   <maintainer email="adugu001@odu.edu">Andrew</maintainer>
-  <license>[TODO]</license>
+  <license>MIT</license>
 
   <depend>littleblue_autonomy</depend>
   <depend>littleblue_vision</depend>

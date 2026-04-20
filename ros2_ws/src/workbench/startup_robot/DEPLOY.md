@@ -66,10 +66,10 @@ autonomy stack on the physical robot. Everything sim-specific lives in
    ls -l /dev/lidar /dev/gps /dev/imu /dev/motor
    ```
 
-   (The `camera_left` / `camera_right` entries in the shipped rules
-   file are only relevant if you end up using a USB webcam driver.
-   Basler / RealSense / ZED drivers don't need udev — they identify
-   devices by serial number from inside their own launch files.)
+   (No camera entries in the shipped rules — Basler, RealSense, and
+   ZED drivers all identify cameras by serial number from inside
+   their own launch files. Re-add a `camera_left` / `camera_right`
+   rule only if you fall back to a USB UVC webcam.)
 
 3. **Cameras**
 
@@ -294,7 +294,9 @@ ros2 launch startup_robot deploy.launch.py rviz:=true
 
 1. **`robot_state_publisher`** loads `urdf/littleblue_deploy.urdf.xacro`
    and emits the TF tree.
-2. **Sensor drivers**: `usb_cam` ×2, `sllidar_ros2`, IMU, GPS.
+2. **Sensor drivers**: `sllidar_ros2`, IMU, GPS. Cameras run
+   separately (see §3) and feed the autonomy via the
+   `left_image_topic` / `right_image_topic` launch args.
 3. **`robot_localization` EKF stack**:
    - `ekf_local_node` fuses wheel odom + IMU → `odom → base_footprint`
    - `ekf_global_node` fuses the above + GPS → `map → odom`

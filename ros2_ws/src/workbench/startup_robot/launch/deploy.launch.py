@@ -101,11 +101,11 @@ def generate_launch_description():
     #   Stereolabs ZED2          → zed_ros2_wrapper (from source)
     #   Orbbec Astra             → ros-iron-astra-camera
     #
-    # If the chosen camera is a single stereo device (like ZED/RealSense)
-    # that produces both RGB + depth, you can replace the two `usb_cam`
-    # blocks above with two realsense2_camera launches (one per serial
-    # number), each remapping its image_raw + depth/image_raw to the
-    # left_camera/* or right_camera/* namespace.
+    # If the chosen camera is a single stereo device (like ZED or
+    # RealSense) that produces both RGB + depth, a single driver
+    # launch per side can feed both left_image_topic (above) and the
+    # depth topic below — remap its image_raw + depth/image_raw to
+    # match what the autonomy expects.
     #
     # left_depth_launch = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(

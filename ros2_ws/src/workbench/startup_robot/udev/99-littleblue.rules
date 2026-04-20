@@ -31,15 +31,8 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="REPLACE", ATTRS{idProduct}=="REPLACE", \
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", \
   ATTRS{serial}=="REPLACE_WITH_ARDUINO_SERIAL", SYMLINK+="motor", MODE="0666"
 
-# --- Left camera (USB UVC) ---
-# Match by the port path (physical USB port), not by product/serial,
-# because many USB webcams share a VID/PID and have no unique serial.
-# Find KERNELS with:  udevadm info -a -n /dev/video0 | grep KERNELS
-KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", \
-  KERNELS=="REPLACE_WITH_LEFT_CAM_PORT", \
-  ATTRS{index}=="0", SYMLINK+="camera_left", MODE="0666"
-
-# --- Right camera ---
-KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", \
-  KERNELS=="REPLACE_WITH_RIGHT_CAM_PORT", \
-  ATTRS{index}=="0", SYMLINK+="camera_right", MODE="0666"
+# Cameras intentionally omitted. Basler/RealSense/ZED drivers
+# identify devices by serial number from inside their own launch
+# files, so udev symlinks aren't needed. If you ever drop back to
+# a UVC webcam, add a `SYMLINK+="camera_left"` / `camera_right`
+# rule matched by KERNELS (USB port path) or ATTRS{serial}.
