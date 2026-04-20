@@ -80,58 +80,57 @@ autonomy stack on the physical robot. Everything sim-specific lives in
 
    | Property       | Required value                            |
    | -------------- | ----------------------------------------- |
-   | Left topic     | `sensor_msgs/msg/Image` on `/left_camera/image_raw`  (override with `left_image_topic:=...`)  |
-   | Right topic    | `sensor_msgs/msg/Image` on `/right_camera/image_raw` (override with `right_image_topic:=...`) |
+   | Left topic     | `sensor_msgs/msg/Image` on `/first_cam_id/first_cam_node/image_raw` (override with `left_image_topic:=...`) |
+   | Right topic    | `sensor_msgs/msg/Image` on `/second_cam_id/second_cam_node/image_raw` (override with `right_image_topic:=...`) |
    | `frame_id`     | `left_camera_link` / `right_camera_link`  |
    | Encoding       | `rgb8` or `bgr8` (cv_bridge handles both) |
    | Rate           | ≥ 10 Hz                                   |
 
-   ### Driver integration examples
+   The default topic names match the Basler `pylon_ros2_camera` stack
+   already running on LittleBlue (the Pylon driver lives in an
+   Ubuntu-24.04 Docker container; topics flow to the 22.04 Iron host
+   via DDS).
 
-   **Basler (pylon_ros2_camera)** — typically shipped in a Docker
-   container (the Pylon driver only supports Ubuntu ≥ 24.04):
+   ### Cross-container DDS
+
+   For the container's topics to be visible to the autonomy running
+   on the host:
 
    ```bash
-   # On Docker host: same ROS_DOMAIN_ID + network=host so the topics
-   # are discoverable from the 22.04 Iron workspace.
-   docker run --network host -e ROS_DOMAIN_ID=$ROS_DOMAIN_ID \
-     your-basler-image:latest
+   # In the Basler container's ROS env and on the host:
+   export ROS_DOMAIN_ID=<same on both sides>
+   # Container must either share the host network (--network host)
+   # or have multicast DDS discovery configured.
+   ```
 
-   # On host, launch autonomy with your driver's actual topic names:
+   If the autonomy can't see the image topics, verify from the host
+   with `ros2 topic list` — if the Basler topics aren't there, the
+   issue is DDS discovery (container networking or RMW), not our
+   launch file.
+
+   ### Alternative hardware
+
+   If the robot's camera stack is ever swapped, launch with the new
+   topic names:
+
+   ```bash
+   # Intel RealSense
    ros2 launch startup_robot deploy.launch.py \
-     left_image_topic:=/pylon_left/image_raw \
-     right_image_topic:=/pylon_right/image_raw
-   ```
+     left_image_topic:=/left_camera/color/image_raw \
+     right_image_topic:=/right_camera/color/image_raw
 
-   Make sure the container and host agree on RMW implementation
-   (both Fast DDS or both Cyclone DDS) and domain ID — otherwise
-   topics won't cross the container boundary.
-
-   **Intel RealSense**:
-
-   ```bash
-   sudo apt install ros-iron-realsense2-camera
-   # Launch per-camera with the canonical topic names:
-   ros2 launch realsense2_camera rs_launch.py \
-     serial_no:=<LEFT_SERIAL> \
-     camera_name:=left_camera
-   # Autonomy picks up /left_camera/image_raw automatically.
-   ```
-
-   **Plain USB webcam** (if you ever do go back to UVC):
-
-   ```bash
-   sudo apt install ros-iron-usb-cam
-   ros2 run usb_cam usb_cam_node_exe \
-     --ros-args -p video_device:=/dev/video0 \
-     -r image_raw:=/left_camera/image_raw
+   # USB webcam via usb_cam
+   ros2 launch startup_robot deploy.launch.py \
+     left_image_topic:=/usb_cam_left/image_raw \
+     right_image_topic:=/usb_cam_right/image_raw
    ```
 
    ### Verify
 
    ```bash
-   ros2 topic hz /left_camera/image_raw     # expect ~15 Hz
-   ros2 topic echo --once /left_camera/image_raw | grep -E "encoding|frame_id|width|height"
+   ros2 topic hz /first_cam_id/first_cam_node/image_raw     # expect ~15 Hz
+   ros2 topic echo --once /first_cam_id/first_cam_node/image_raw \
+     | grep -E "encoding|frame_id|width|height"
    ```
 
 4. **Choose and install the IMU + GPS drivers**
